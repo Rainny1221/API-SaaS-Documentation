@@ -1,0 +1,2453 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orders Module — Code Reference & Business Logic Guide</title>
+<meta name="description" content="Tài liệu giải thích đầy đủ logic nghiệp vụ, công thức tính toán và truy vấn SQL/TypeORM — dành cho Developer và team Sales / BD.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════
+   DESIGN TOKENS
+   ══════════════════════════════════════════ */
+:root {
+  --bg:         #F7F6F3;
+  --surface:    #FFFFFF;
+  --surface-2:  #F0EDE8;
+  --surface-3:  #E6E3DC;
+  --border:     #E0DCD5;
+  --border-2:   #CBC6BC;
+
+  --ink:        #1A1816;
+  --ink-2:      #494540;
+  --ink-3:      #87827A;
+  --ink-4:      #B5B0A8;
+
+  --accent:     #1D6B4A;
+  --accent-light:#2A8F63;
+  --accent-bg:  #E8F5ED;
+  --accent-mid: #B8DECA;
+
+  --blue:       #1A5780;
+  --blue-bg:    #E8F2FA;
+  --blue-mid:   #BFDAF0;
+
+  --amber:      #7A5000;
+  --amber-bg:   #FDF3E0;
+
+  --rose:       #852A2A;
+  --rose-bg:    #FCEAE9;
+
+  --purple:     #4A2A88;
+  --purple-bg:  #EEE9FC;
+
+  --teal:       #186075;
+  --teal-bg:    #E2F3F8;
+
+  --code-bg:    #EDEBE6;
+  --code-border:#DAD7D0;
+  --code-ink:   #26231F;
+
+  --r:  10px;
+  --rl: 13px;
+  --sb: 280px;
+
+  --font-body: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+
+  --ease-out: cubic-bezier(.16, 1, .3, 1);
+}
+
+/* ══════════════════════════════════════════
+   RESET & BASE
+   ══════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; scroll-behavior: smooth; }
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--ink);
+  display: flex;
+  min-height: 100dvh;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+::selection { background: var(--accent-bg); color: var(--accent); }
+
+/* ══════════════════════════════════════════
+   SIDEBAR
+   ══════════════════════════════════════════ */
+#sb {
+  width: var(--sb);
+  min-width: var(--sb);
+  height: 100dvh;
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex-shrink: 0;
+  z-index: 10;
+}
+.sb-brand {
+  padding: 22px 22px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.sb-name {
+  font-size: 14.5px;
+  font-weight: 750;
+  color: var(--ink);
+  letter-spacing: -0.3px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.sb-live {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: blink 2.8s ease-in-out infinite;
+  box-shadow: 0 0 0 3px var(--accent-bg);
+  flex-shrink: 0;
+}
+@keyframes blink { 0%,100%{opacity:1} 55%{opacity:.25} }
+.sb-tagline {
+  font-size: 11.5px;
+  color: var(--ink-4);
+  margin-top: 3px;
+  font-weight: 400;
+}
+.sb-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-3);
+}
+.sb-count span {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 1px 7px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--accent);
+}
+
+.sb-find {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.sb-find input {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  padding: 7px 12px;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+.sb-find input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-bg);
+}
+.sb-find input::placeholder { color: var(--ink-4); }
+
+.sb-tree {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 28px;
+}
+.sb-tree::-webkit-scrollbar { width: 3px; }
+.sb-tree::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 2px; }
+
+.sb-cat {
+  padding: 16px 22px 5px;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+}
+.sb-a {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 5px 22px 5px 20px;
+  font-size: 12.5px;
+  font-weight: 450;
+  color: var(--ink-3);
+  text-decoration: none;
+  cursor: pointer;
+  border-left: 2.5px solid transparent;
+  transition: all .15s var(--ease-out);
+  line-height: 1.4;
+}
+.sb-a:hover { color: var(--ink-2); background: var(--surface-2); }
+.sb-a.on {
+  color: var(--accent);
+  background: var(--accent-bg);
+  border-left-color: var(--accent);
+  font-weight: 600;
+}
+.sb-pip {
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--border-2);
+  flex-shrink: 0;
+  margin-top: 5px;
+  transition: background .15s;
+}
+.sb-a.on .sb-pip { background: var(--accent); }
+
+/* ══════════════════════════════════════════
+   MAIN
+   ══════════════════════════════════════════ */
+#main {
+  flex: 1;
+  overflow-y: auto;
+  min-width: 0;
+}
+#main::-webkit-scrollbar { width: 5px; }
+#main::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 3px; }
+
+#prog {
+  position: fixed;
+  top: 0; left: 0;
+  height: 2.5px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-light));
+  width: 0;
+  z-index: 999;
+  pointer-events: none;
+  transition: width .08s linear;
+  border-radius: 0 1px 1px 0;
+}
+
+/* ══════════════════════════════════════════
+   HERO
+   ══════════════════════════════════════════ */
+.hero {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 56px 72px 48px;
+}
+.hero-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-mid);
+  color: var(--accent);
+  border-radius: 99px;
+  font-size: 11.5px;
+  font-weight: 650;
+  padding: 4px 13px;
+  letter-spacing: .02em;
+  margin-bottom: 22px;
+}
+.hero h1 {
+  font-size: 40px;
+  font-weight: 800;
+  letter-spacing: -1.1px;
+  line-height: 1.1;
+  color: var(--ink);
+  margin-bottom: 14px;
+}
+.hero-sub {
+  font-size: 16px;
+  color: var(--ink-2);
+  font-weight: 400;
+  line-height: 1.75;
+  max-width: 580px;
+  margin-bottom: 28px;
+}
+.hero-tags {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+.hero-tag {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 4px 11px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--ink-2);
+}
+
+/* ══════════════════════════════════════════
+   CONTENT WRAP
+   ══════════════════════════════════════════ */
+.wrap {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 72px 140px;
+}
+
+/* ══════════════════════════════════════════
+   SECTION
+   ══════════════════════════════════════════ */
+.sec, .ep { scroll-margin-top: 28px; }
+.sec {
+  padding-top: 64px;
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity .55s var(--ease-out), transform .55s var(--ease-out);
+}
+.sec.vis { opacity: 1; transform: none; }
+
+.sec-head {
+  margin-bottom: 28px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+.sec-num {
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+  margin-bottom: 5px;
+}
+.sec-title {
+  font-size: 26px;
+  font-weight: 750;
+  letter-spacing: -.5px;
+  color: var(--ink);
+  line-height: 1.15;
+}
+.sec-note {
+  margin-top: 7px;
+  font-size: 14.5px;
+  color: var(--ink-3);
+  max-width: 560px;
+  line-height: 1.65;
+}
+
+/* ══════════════════════════════════════════
+   ENDPOINT CARD
+   ══════════════════════════════════════════ */
+.ep {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--rl);
+  margin-bottom: 14px;
+  overflow: hidden;
+  transition: border-color .2s, box-shadow .2s;
+}
+.ep:hover { border-color: var(--border-2); }
+.ep.open {
+  border-color: var(--border-2);
+  box-shadow: 0 4px 24px rgba(0,0,0,.045);
+}
+.ep-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 20px;
+  cursor: pointer;
+  user-select: none;
+  transition: background .15s;
+}
+.ep-head:hover { background: rgba(0,0,0,.012); }
+
+.m {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  margin-top: 3px;
+  letter-spacing: .05em;
+}
+.m-get  { background: var(--blue-bg);   color: var(--blue); }
+.m-post { background: var(--accent-bg); color: var(--accent); }
+
+.ep-meta { flex: 1; min-width: 0; }
+.ep-path {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--ink);
+  font-weight: 500;
+  margin-bottom: 3px;
+  word-break: break-all;
+}
+.ep-path .dim { color: var(--ink-4); font-weight: 400; }
+.ep-desc {
+  font-size: 13.5px;
+  color: var(--ink-3);
+  line-height: 1.45;
+}
+.ep-biz {
+  font-size: 12.5px;
+  color: var(--accent);
+  font-weight: 500;
+  margin-top: 3px;
+  line-height: 1.4;
+}
+
+.tag-row {
+  display: flex;
+  gap: 5px;
+  margin-top: 7px;
+  flex-wrap: wrap;
+}
+.t {
+  font-size: 10px;
+  font-weight: 650;
+  padding: 2px 9px;
+  border-radius: 99px;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+.t-pub  { background: var(--accent-bg); color: var(--accent); }
+.t-dep  { background: var(--rose-bg);   color: var(--rose); }
+.t-ext  { background: var(--amber-bg);  color: var(--amber); }
+.t-par  { background: var(--purple-bg); color: var(--purple); }
+.t-teal { background: var(--teal-bg);   color: var(--teal); }
+
+.ep-arrow {
+  color: var(--ink-4);
+  font-size: 11px;
+  margin-top: 5px;
+  flex-shrink: 0;
+  transition: transform .25s var(--ease-out);
+}
+.ep.open .ep-arrow { transform: rotate(180deg); }
+
+.ep-body { display: none; border-top: 1px solid var(--border); }
+.ep.open .ep-body { display: block; }
+
+/* ══════════════════════════════════════════
+   TABS
+   ══════════════════════════════════════════ */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+  padding: 0 20px;
+  overflow-x: auto;
+  gap: 0;
+}
+.tabs::-webkit-scrollbar { display: none; }
+.tb {
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink-4);
+  padding: 10px 13px;
+  cursor: pointer;
+  border: none;
+  background: none;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: color .15s, border-color .15s;
+}
+.tb:hover { color: var(--ink-2); }
+.tb.on { color: var(--ink); border-bottom-color: var(--ink); font-weight: 650; }
+
+.pane { display: none; }
+.pane.on { display: block; }
+.pad { padding: 26px 24px 24px; }
+
+/* ══════════════════════════════════════════
+   PROSE
+   ══════════════════════════════════════════ */
+.p {
+  font-size: 14.5px;
+  color: var(--ink-2);
+  line-height: 1.8;
+  max-width: 700px;
+}
+.p + .p { margin-top: 12px; }
+.p strong { color: var(--ink); font-weight: 650; }
+.p em { font-style: italic; color: var(--ink-3); }
+.p code, code.inline {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  padding: 1.5px 6px;
+  border-radius: 5px;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* ══════════════════════════════════════════
+   BUSINESS LOGIC BOX
+   ══════════════════════════════════════════ */
+.biz-box {
+  background: linear-gradient(135deg, #F8FAF9 0%, #F0F6F3 100%);
+  border: 1px solid var(--accent-mid);
+  border-left: 3.5px solid var(--accent);
+  border-radius: 0 var(--r) var(--r) 0;
+  padding: 18px 20px;
+  margin: 14px 0;
+}
+.biz-box-title {
+  font-size: 10.5px;
+  font-weight: 750;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.biz-box-title::before {
+  content: '';
+  width: 12px; height: 12px;
+  background: var(--accent);
+  border-radius: 3px;
+  opacity: .25;
+  flex-shrink: 0;
+}
+.biz-box p {
+  font-size: 13.5px;
+  color: var(--ink-2);
+  line-height: 1.75;
+  max-width: 680px;
+}
+.biz-box p + p { margin-top: 8px; }
+.biz-box strong { color: var(--ink); font-weight: 650; }
+.biz-box code {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  background: rgba(29,107,74,.08);
+  border: 1px solid rgba(29,107,74,.18);
+  padding: 1px 5px;
+  border-radius: 4px;
+  color: var(--accent);
+}
+
+/* ══════════════════════════════════════════
+   CODE BLOCK
+   ══════════════════════════════════════════ */
+.cw {
+  margin: 16px 0;
+  border-radius: var(--r);
+  overflow: hidden;
+  border: 1px solid var(--code-border);
+}
+.cw:first-child { margin-top: 0; }
+.ct {
+  background: var(--surface-3);
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--code-border);
+}
+.cl {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--ink-3);
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+.cn { font-size: 11.5px; color: var(--ink-3); font-weight: 500; }
+
+pre {
+  background: var(--code-bg);
+  margin: 0;
+  overflow-x: auto;
+  padding: 16px 20px;
+}
+pre::-webkit-scrollbar { height: 4px; }
+pre::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 2px; }
+pre code {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.85;
+  color: var(--code-ink);
+  background: none;
+  border: none;
+  padding: 0;
+  border-radius: 0;
+}
+
+/* syntax */
+.kw { color: #7B3229; font-weight: 500; }
+.fn { color: #1A5678; }
+.st { color: #2A5C3F; }
+.cm { color: #9A9188; font-style: italic; }
+.nm { color: #7A5000; }
+.pr { color: #4A2A88; }
+.sq { color: #7B3229; font-weight: 500; }
+.sa { color: #1A5678; }
+.tp { color: #7A5000; }
+
+/* ══════════════════════════════════════════
+   FORMULA
+   ══════════════════════════════════════════ */
+.fml {
+  background: var(--surface);
+  border: 1px solid var(--code-border);
+  border-left: 3px solid var(--blue);
+  border-radius: 0 var(--r) var(--r) 0;
+  padding: 16px 20px;
+  margin: 14px 0;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 2;
+  color: var(--ink);
+}
+.fml-lbl {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--blue);
+  margin-bottom: 8px;
+}
+
+/* ══════════════════════════════════════════
+   CALLOUT
+   ══════════════════════════════════════════ */
+.co {
+  display: flex;
+  gap: 11px;
+  padding: 14px 18px;
+  border-radius: var(--r);
+  font-size: 13.5px;
+  line-height: 1.65;
+  margin: 14px 0;
+}
+.co-info  { background: var(--blue-bg);  border: 1px solid rgba(26,87,128,.15); }
+.co-warn  { background: var(--amber-bg); border: 1px solid rgba(122,80,0,.15); }
+.co-alert { background: var(--rose-bg);  border: 1px solid rgba(133,42,42,.15); }
+.co-tip   { background: var(--teal-bg);  border: 1px solid rgba(24,96,117,.15); }
+.co-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+.co b { color: var(--ink); font-weight: 650; }
+.co p { color: var(--ink-2); line-height: 1.65; margin-top: 2px; }
+
+/* ══════════════════════════════════════════
+   FLOW STEPS
+   ══════════════════════════════════════════ */
+.flow {
+  position: relative;
+  margin: 14px 0;
+}
+.flow::before {
+  content: '';
+  position: absolute;
+  left: 13px; top: 30px; bottom: 18px;
+  width: 1px;
+  background: linear-gradient(to bottom, var(--border-2) 60%, transparent);
+}
+.fstep {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 7px 0;
+}
+.fnum {
+  width: 27px; height: 27px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  border: 1px solid var(--border-2);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--ink-3);
+  flex-shrink: 0;
+  position: relative; z-index: 1;
+}
+.fstep.hi .fnum {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.ftxt strong {
+  display: block;
+  font-size: 13.5px;
+  color: var(--ink);
+  font-weight: 650;
+  margin-bottom: 2px;
+}
+.ftxt span {
+  font-size: 13px;
+  color: var(--ink-3);
+  line-height: 1.55;
+}
+.ftxt code {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  padding: 1px 5px;
+  border-radius: 4px;
+  color: var(--accent);
+}
+
+/* ══════════════════════════════════════════
+   GRID
+   ══════════════════════════════════════════ */
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 14px 0;
+}
+.grid3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  margin: 14px 0;
+}
+.gi {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px 16px;
+}
+.gi-k {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--accent);
+  font-weight: 500;
+  margin-bottom: 5px;
+}
+.gi-v { font-size: 13px; color: var(--ink-3); line-height: 1.58; }
+.gi-v strong { color: var(--ink-2); font-weight: 600; }
+
+/* ══════════════════════════════════════════
+   LABEL
+   ══════════════════════════════════════════ */
+.lbl {
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin: 22px 0 10px;
+}
+.lbl:first-child { margin-top: 0; }
+
+/* ══════════════════════════════════════════
+   INDEX TABLE
+   ══════════════════════════════════════════ */
+.ov-wrap {
+  border: 1px solid var(--border);
+  border-radius: var(--rl);
+  overflow: hidden;
+  background: var(--surface);
+}
+.ov {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+.ov th {
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+  text-align: left;
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+.ov td {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+  line-height: 1.45;
+}
+.ov tr:last-child td { border-bottom: none; }
+.ov tr:hover td { background: #FAF9F6; }
+.ov td:first-child {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.ov td:nth-child(2) { color: var(--ink-2); font-size: 13px; }
+.ov td:nth-child(3) { color: var(--ink-3); font-size: 12.5px; }
+
+/* ══════════════════════════════════════════
+   DIVIDER
+   ══════════════════════════════════════════ */
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 20px 0;
+}
+
+/* ══════════════════════════════════════════
+   FOOTER
+   ══════════════════════════════════════════ */
+.footer {
+  margin-top: 80px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--ink-4);
+  line-height: 1.9;
+}
+
+/* ══════════════════════════════════════════
+   RESPONSIVE
+   ══════════════════════════════════════════ */
+@media (max-width: 960px) {
+  #sb { display: none; }
+  .hero { padding: 36px 24px 32px; }
+  .hero h1 { font-size: 28px; }
+  .wrap { padding: 0 24px 80px; }
+  .grid2, .grid3 { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div id="prog"></div>
+
+<!-- ══════════════════════════════════════════
+     SIDEBAR
+     ══════════════════════════════════════════ -->
+<nav id="sb">
+  <div class="sb-brand">
+    <div class="sb-name"><div class="sb-live"></div>Table of Content</div>
+    <div class="sb-tagline">Code Reference · Business Logic Guide</div>
+  </div>
+  <div class="sb-find">
+    <input id="q" type="text" placeholder="Tìm endpoint hoặc chức năng...">
+  </div>
+  <div class="sb-tree" id="tree">
+
+    <div class="sb-cat">Tổng quan</div>
+    <a class="sb-a" href="#index"><div class="sb-pip"></div>Danh sách tất cả endpoints</a>
+
+    <div class="sb-cat">02 · Analytics & Doanh thu</div>
+    <a class="sb-a" href="#s-gross"><div class="sb-pip"></div>Biên lợi nhuận gộp (GPM)</a>
+    <a class="sb-a" href="#s-revenue"><div class="sb-pip"></div>Doanh thu thực tế</a>
+    <a class="sb-a" href="#s-aov"><div class="sb-pip"></div>Giá trị đơn trung bình (AOV)</a>
+    <a class="sb-a" href="#s-golden"><div class="sb-pip"></div>Khung giờ vàng</a>
+
+    <div class="sb-cat">03 · Creator & KOC</div>
+    <a class="sb-a" href="#s-collab-list"><div class="sb-pip"></div>Creator đã hợp tác</a>
+    <a class="sb-a" href="#s-collab-ov"><div class="sb-pip"></div>Tổng quan trạng thái sample</a>
+    <a class="sb-a" href="#s-unposted"><div class="sb-pip"></div>Creator chưa đăng video</a>
+    <a class="sb-a" href="#s-loyal"><div class="sb-pip"></div>KOC trung thành</a>
+    <a class="sb-a" href="#s-partner"><div class="sb-pip"></div>Thống kê đối tác</a>
+    <a class="sb-a" href="#s-gmv"><div class="sb-pip"></div>GMV theo KOC</a>
+    <a class="sb-a" href="#s-city"><div class="sb-pip"></div>Top tỉnh thành</a>
+
+    <div class="sb-cat">04 · Customer Analytics</div>
+    <a class="sb-a" href="#s-newcust"><div class="sb-pip"></div>% Khách hàng mới</a>
+    <a class="sb-a" href="#s-repeat"><div class="sb-pip"></div>Khách hàng quay lại</a>
+    <a class="sb-a" href="#s-dashboard"><div class="sb-pip"></div>Dashboard tổng hợp</a>
+    <a class="sb-a" href="#s-voucher-list"><div class="sb-pip"></div>Khách dùng voucher</a>
+    <a class="sb-a" href="#s-voucher-stats"><div class="sb-pip"></div>Thống kê tăng trưởng voucher</a>
+
+    <div class="sb-cat">05 · Orders & Products</div>
+    <a class="sb-a" href="#s-orders"><div class="sb-pip"></div>Danh sách đơn hàng</a>
+    <a class="sb-a" href="#s-refund"><div class="sb-pip"></div>Đơn hoàn / huỷ</a>
+    <a class="sb-a" href="#s-inventory"><div class="sb-pip"></div>Tồn kho (TikTok API)</a>
+    <a class="sb-a" href="#s-videogmv"><div class="sb-pip"></div>Video có / không có GMV</a>
+
+    <div class="sb-cat">06 · Sample Orders</div>
+    <a class="sb-a" href="#s-samplecost"><div class="sb-pip"></div>Chi phí sample</a>
+    <a class="sb-a" href="#s-samplesend"><div class="sb-pip"></div>Tổng sample theo ngày</a>
+
+    <div class="sb-cat">07 · Utilities</div>
+    <a class="sb-a" href="#s-products"><div class="sb-pip"></div>Danh sách sản phẩm</a>
+
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════════
+     MAIN CONTENT
+     ══════════════════════════════════════════ -->
+<main id="main">
+
+  <div class="hero">
+    <div class="hero-chip"><div class="sb-live"></div>ZZP API SaaaS Documentation · v1</div>
+    <h1>Code Reference &amp;<br>Business Logic Guide</h1>
+    <p class="hero-sub">Giải thích chi tiết logic nghiệp vụ, công thức tính toán và lý do kỹ thuật của từng endpoint — dành cho Developer hiểu rõ cách dữ liệu được sinh ra.</p>
+  </div>
+
+  <div class="wrap">
+
+    <!-- ═══════════════ 01 · INDEX ═══════════════ -->
+    <div class="sec" id="index">
+      <div class="sec-head">
+        <div class="sec-num">01 · Index</div>
+        <div class="sec-title">Danh sách tất cả endpoints</div>
+        <p class="sec-note">Tổng quan 27 endpoint theo nhóm chức năng, bao gồm mô tả nghiệp vụ ngắn gọn.</p>
+      </div>
+      <div class="ov-wrap">
+        <table class="ov">
+          <thead><tr><th>Endpoint</th><th>Chức năng nghiệp vụ</th><th>Ghi chú</th></tr></thead>
+          <tbody>
+            <tr><td>GET /gross-profit-margin-from-order-voucher</td><td>Biên lợi nhuận gộp & ROI 3 loại voucher</td><td>innerJoin lọc đơn có voucher</td></tr>
+            <tr><td>GET /actual-revenue</td><td>Doanh thu thực = GMV affiliate − chi phí sample đã giao</td><td>2 queries tuần tự</td></tr>
+            <tr><td>GET /average-order-value</td><td>Trung bình payment ÷ số đơn duy nhất</td><td>LATERAL join tránh nhân row</td></tr>
+            <tr><td>GET /time-golden-order</td><td>Khung giờ có tổng đơn cao nhất (sliding window)</td><td>PostgreSQL Window Function</td></tr>
+            <tr><td>GET /collaborated-creator/list</td><td>Creator đã nhận sample + stats đơn hàng thực tế</td><td>2 queries + merge in-memory</td></tr>
+            <tr><td>GET /collaborated-creator/overview</td><td>Tổng quan trạng thái sample & content creator</td><td>Phân loại per order</td></tr>
+            <tr><td>GET /creator-unposted-video</td><td>Creator DELIVERED nhưng chưa có content nào</td><td>LEFT JOIN IS NULL</td></tr>
+            <tr><td>GET /koc-loyal/list</td><td>KOC tự mua sản phẩm, không nhận sample từ seller</td><td>2 flag: crawlReceived & !isReceived</td></tr>
+            <tr><td>GET /partner-managerment-statistics</td><td>Avg ngày đăng video, tổng creator, KOC có sales</td><td>Promise.all + TikTok API</td></tr>
+            <tr><td>GET /gmv-by-koc</td><td>Tổng GMV từ VIDEO content theo từng creator</td><td>Loại LIVE stream</td></tr>
+            <tr><td>GET /top-koc-beyond-city</td><td>Top tỉnh thành từ địa chỉ giao hàng người mua</td><td>SPLIT_PART + REGEXP_REPLACE</td></tr>
+            <tr><td>GET /percentage-new-customer-by-koc</td><td>% khách mới so với toàn bộ lịch sử trước kỳ</td><td>CTE + LEFT JOIN IS NULL</td></tr>
+            <tr><td>GET /list-new-customer-by-koc</td><td>Chi tiết đơn hàng của khách hàng mới</td><td>Sub-query của endpoint trên</td></tr>
+            <tr><td>GET /repeat-customer-list</td><td>Creator có khách quay lại + repeat rate + level</td><td>HAVING COUNT > 0</td></tr>
+            <tr><td>GET /list-card-feature-customer</td><td>Gộp 4 chỉ số khách hàng trong 1 request</td><td>Promise.all 4 sub-calls</td></tr>
+            <tr><td>GET /voucher-customers</td><td>Danh sách buyers đã dùng voucher, phân trang 2 bước</td><td>Keyset pagination by buyerId</td></tr>
+            <tr><td>GET /voucher-customer-stats</td><td>Fluctuation daily & cumulative growth của đơn voucher</td><td>UTC+7 offset thủ công</td></tr>
+            <tr><td>GET /list</td><td>Danh sách đơn hàng server-side pagination</td><td>Standard OFFSET/LIMIT</td></tr>
+            <tr><td>GET /list-return-refund</td><td>Đơn huỷ + đơn hoàn trả, phân loại bằng cancelTime</td><td>Derived table tránh nhân row</td></tr>
+            <tr><td>POST /inventory-search</td><td>Tồn kho từ TikTok API + inject ảnh từ DB</td><td>External API dependency</td></tr>
+            <tr><td>GET /list-video-has-gmv</td><td>Video có / không có GMV + percentage động</td><td>buildBaseQb factory pattern</td></tr>
+            <tr><td>GET /sample-costs</td><td>Chi phí sample theo ưu tiên giá 3 cấp</td><td>CASE WHEN giftRetail → original → sale</td></tr>
+            <tr><td>GET /total-sample-send</td><td>Số sample gửi nhóm theo từng ngày</td><td>GROUP BY DATE(createTime)</td></tr>
+            <tr><td>GET /percentage-sample-send-each-tap</td><td>% sample phân bổ theo partner/tap</td><td>—</td></tr>
+            <tr><td>GET /max-commission-by-partner</td><td>Hoa hồng max: config rate vs effective rate</td><td>JOIN ngược sample → order_skus</td></tr>
+            <tr><td>GET /list-partner-name</td><td>Distinct partner names từ sample orders</td><td>DISTINCT ON</td></tr>
+            <tr><td>GET /list-product-detail</td><td>Distinct products từ order line items có ảnh</td><td>PostgreSQL DISTINCT ON</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══════════════ 02 · ANALYTICS ═══════════════ -->
+    <div class="sec" id="s-gross">
+      <div class="sec-head">
+        <div class="sec-num">02 · Analytics &amp; Revenue</div>
+        <div class="sec-title">Phân tích doanh thu &amp; lợi nhuận</div>
+        <p class="sec-note">Các chỉ số tài chính cốt lõi — GPM, doanh thu thực, AOV, và phân tích hành vi mua hàng theo giờ.</p>
+      </div>
+
+      <!-- GROSS PROFIT -->
+      <div class="ep open" id="s-gross-ep">
+        <div class="ep-head" onclick="tog(this)">
+          <span class="m m-get">GET</span>
+          <div class="ep-meta">
+            <div class="ep-path"><span class="dim">/orders/</span>gross-profit-margin-from-order-voucher</div>
+            <div class="ep-desc">Biên lợi nhuận gộp &amp; ROI từng loại voucher</div>
+            <div class="ep-biz">Mô tả: "Mỗi đồng bỏ ra cho voucher, thu về bao nhiêu GMV?"</div>
+          </div>
+          <div class="ep-arrow">&#9660;</div>
+        </div>
+        <div class="ep-body">
+          <div class="tabs">
+            <button class="tb on" onclick="stab(this,'biz')">Nghiệp vụ</button>
+            <button class="tb" onclick="stab(this,'logic')">Logic &amp; Công thức</button>
+            <button class="tb" onclick="stab(this,'query')">Query</button>
+            <button class="tb" onclick="stab(this,'output')">Output</button>
+          </div>
+
+          <div class="pane on pad" data-t="biz">
+            <div class="biz-box">
+              <div class="biz-box-title">Mục đích nghiệp vụ</div>
+              <p>Endpoint này giải quyết bài toán <strong>đo hiệu quả chi tiêu marketing qua voucher</strong>. Seller trên TikTok Shop có thể chạy 3 loại voucher khác nhau: voucher từ nền tảng TikTok (platform trợ giá), voucher do seller tự bỏ tiền, và voucher miễn phí vận chuyển từ nền tảng. Mỗi loại có nguồn chi và đối tượng chịu phí khác nhau.</p>
+              <p>Biên lợi nhuận gộp (<strong>Gross Profit Margin</strong>) phản ánh lợi nhuận trước chi phí vận hành và marketing — không tính chi phí cố định. Đây là chỉ số nhanh để biết sản phẩm có đang bán lỗ ở cấp độ đơn hàng hay không.</p>
+            </div>
+            <div class="co co-warn">
+              <span class="co-icon">⚠</span>
+              <div><b>Lưu ý quan trọng:</b> <p>Một đơn hàng có thể dùng <em>đồng thời nhiều loại voucher</em>. Code dùng <strong>3 if độc lập (không phải else-if)</strong> nên GMV của đơn đó sẽ được cộng vào tất cả bucket voucher mà nó thuộc về. Đây là overlap có chủ đích để ROI của mỗi nguồn chi phản ánh đúng thực tế.</p></div>
+            </div>
+          </div>
+
+          <div class="pane pad" data-t="logic">
+            <div class="lbl">Công thức tính Gross Profit Margin</div>
+            <div class="fml">
+              <div class="fml-lbl">Tính cho mỗi đơn hàng</div>
+costCommission  = totalAmount &times; (commissionRate / 100) / 100<br><br>
+grossProfit    += totalAmount<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&minus; skuSalePrice&nbsp;&nbsp;&nbsp;&larr; <span class="cm">// giá vốn hàng bán (cost of goods)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&minus; shippingFee&nbsp;&nbsp;&nbsp;&nbsp;&larr; <span class="cm">// phí vận chuyển seller chịu</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&minus; costCommission  &larr; <span class="cm">// hoa hồng trả cho creator</span>
+            </div>
+
+            <div class="lbl">Công thức tính ROI từng loại voucher</div>
+            <div class="fml">
+              <div class="fml-lbl">3 bucket độc lập</div>
+<span class="cm">// Bucket 1: Platform voucher (TikTok trợ giá cho buyer)</span><br>
+if voucherDeductionPlatform > 0:<br>
+&nbsp;&nbsp;totalGmvPlatform   += order.totalAmount<br>
+&nbsp;&nbsp;totalVoucherPlatform += voucherDeductionPlatform<br>
+<br>
+<span class="cm">// Bucket 2: Seller voucher (seller tự bỏ tiền trợ giá)</span><br>
+if voucherDeductionSeller > 0:<br>
+&nbsp;&nbsp;totalGmvSeller   += order.totalAmount<br>
+&nbsp;&nbsp;totalVoucherSeller += voucherDeductionSeller<br>
+<br>
+<span class="cm">// Bucket 3: Free shipping voucher từ platform</span><br>
+if shippingFeeDeductionPlatformVoucher > 0:<br>
+&nbsp;&nbsp;totalGmvShipping   += order.totalAmount<br>
+&nbsp;&nbsp;totalVoucherShipping += shippingFeeDeductionPlatformVoucher<br>
+<br>
+ROI = totalGmv / totalVoucherSpend<br>
+<span class="cm">// ROI = 25 nghĩa là 1đ chi → 25đ GMV</span>
+            </div>
+
+            <div class="lbl">Tại sao innerJoin thay vì leftJoin?</div>
+            <p class="p"><code>innerJoinAndSelect</code> với điều kiện OR trên 3 trường voucher hoạt động như bộ lọc ngầm: chỉ đơn hàng có <em>ít nhất một loại voucher > 0</em> mới xuất hiện trong kết quả. Dùng <code>leftJoin</code> sẽ đưa vào cả đơn không có voucher nào, làm loãng tập dữ liệu tính GPM.</p>
+            <div class="cw">
+              <div class="ct"><span class="cl">TypeScript</span><span class="cn">3 if độc lập — intentional overlap</span></div>
+              <pre><code><span class="cm">// 3 điều kiện ĐỘC LẬP — một đơn có thể cộng vào cả 3 bucket</span>
+<span class="kw">if</span> (<span class="fn">Number</span>(order.voucher_deduction_platform) > <span class="nm">0</span>) {
+  totalGmvPlatform    += <span class="fn">Number</span>(order.total_amount);
+  totalVoucherPlatform += <span class="fn">Number</span>(order.voucher_deduction_platform);
+}
+<span class="kw">if</span> (<span class="fn">Number</span>(order.voucher_deduction_seller) > <span class="nm">0</span>) {
+  totalGmvSeller    += <span class="fn">Number</span>(order.total_amount);
+  totalVoucherSeller += <span class="fn">Number</span>(order.voucher_deduction_seller);
+}
+<span class="kw">if</span> (<span class="fn">Number</span>(order.shipping_fee_deduction_platform_voucher) > <span class="nm">0</span>) {
+  totalGmvShipping    += <span class="fn">Number</span>(order.total_amount);
+  totalVoucherShipping += <span class="fn">Number</span>(order.shipping_fee_deduction_platform_voucher);
+}</code></pre>
+            </div>
+          </div>
+
+          <div class="pane pad" data-t="query">
+            <div class="cw">
+              <div class="ct"><span class="cl">TypeORM</span><span class="cn">innerJoin lọc đơn có ít nhất 1 voucher dương</span></div>
+              <pre><code>ordersRepository
+  .<span class="fn">createQueryBuilder</span>(<span class="st">'o'</span>)
+  .<span class="fn">leftJoinAndSelect</span>(
+    <span class="st">'o.orderSkus'</span>, <span class="st">'os'</span>,
+    <span class="st">'os.deletedAt IS NULL AND os.commissionRate > 0'</span>
+  )
+  .<span class="fn">innerJoinAndSelect</span>(  <span class="cm">// inner = loại đơn không có voucher</span>
+    <span class="st">'o.orderPayments'</span>, <span class="st">'p'</span>,
+    <span class="st">`p.deletedAt IS NULL
+    AND (p.voucherDeductionPlatform > 0
+      OR p.voucherDeductionSeller > 0
+      OR p.shippingFeeDeductionPlatformVoucher > 0)`</span>
+  )
+  .<span class="fn">where</span>(<span class="st">`o.sellerId = :sellerId
+    AND o.isSampleOrder = :isSampleOrder
+    AND o.createTime BETWEEN :startTime AND :endTime`</span>,
+    { sellerId, isSampleOrder: <span class="kw">false</span>, startTime, endTime }
+  )
+  .<span class="fn">select</span>([
+    <span class="st">'p.totalAmount            as total_amount'</span>,
+    <span class="st">'p.shippingFee            as shipping_fee'</span>,
+    <span class="st">'p.skuSalePrice           as sku_sale_price'</span>,
+    <span class="st">'p.voucherDeductionPlatform    as voucher_deduction_platform'</span>,
+    <span class="st">'p.voucherDeductionSeller      as voucher_deduction_seller'</span>,
+    <span class="st">'p.shippingFeeDeductionPlatformVoucher as shipping_fee_deduction_platform_voucher'</span>,
+    <span class="st">'os.commissionRate        as commission_rate'</span>,
+  ])
+  .<span class="fn">getRawMany</span>();</code></pre>
+            </div>
+          </div>
+
+          <div class="pane pad" data-t="output">
+            <div class="cw">
+              <div class="ct"><span class="cl">JSON</span><span class="cn">Response shape đầy đủ</span></div>
+              <pre><code>{
+  <span class="pr">"grossProfitMargin"</span>: <span class="nm">125000000</span>,       <span class="cm">// tổng lợi nhuận gộp (VND)</span>
+  <span class="pr">"actualCost"</span>: {
+    <span class="pr">"totalVoucherSpend"</span>: <span class="nm">5000000</span>,        <span class="cm">// tổng voucher đã chi ra</span>
+    <span class="pr">"totalSalePrice"</span>: <span class="nm">80000000</span>,         <span class="cm">// giá vốn hàng bán</span>
+    <span class="pr">"totalShippingFeeSpend"</span>: <span class="nm">3000000</span>,   <span class="cm">// phí ship seller chịu</span>
+    <span class="pr">"totalActualCost"</span>: <span class="nm">88000</span>            <span class="cm">// average cost per order</span>
+  },
+  <span class="pr">"voucherPlatformRoi"</span>: {
+    <span class="pr">"totalGmvFromVoucherPlatformOrders"</span>: <span class="nm">50000000</span>,
+    <span class="pr">"totalVoucherPlatformSpend"</span>: <span class="nm">2000000</span>,
+    <span class="pr">"roi"</span>: <span class="st">"25.00"</span>   <span class="cm">// 1đ bỏ ra → thu về 25đ GMV</span>
+  },
+  <span class="pr">"voucherSellerRoi"</span>:   { <span class="cm">/* cấu trúc tương tự */</span> },
+  <span class="pr">"voucherShippingRoi"</span>: { <span class="cm">/* cấu trúc tương tự */</span> }
+}</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACTUAL REVENUE -->
+      <div class="ep" id="s-revenue">
+        <div class="ep-head" onclick="tog(this)">
+          <span class="m m-get">GET</span>
+          <div class="ep-meta">
+            <div class="ep-path"><span class="dim">/orders/</span>actual-revenue</div>
+            <div class="ep-desc">Doanh thu thực tế = GMV affiliate − chi phí sample đã giao</div>
+            <div class="ep-biz">Mô tả: "Sau khi trừ chi phí gửi hàng mẫu, seller thực thu về bao nhiêu?"</div>
+          </div>
+          <div class="ep-arrow">&#9660;</div>
+        </div>
+        <div class="ep-body">
+          <div class="tabs">
+            <button class="tb on" onclick="stab(this,'biz')">Nghiệp vụ</button>
+            <button class="tb" onclick="stab(this,'logic')">Logic &amp; Công thức</button>
+            <button class="tb" onclick="stab(this,'query')">Query</button>
+          </div>
+          <div class="pane on pad" data-t="biz">
+            <div class="biz-box">
+              <div class="biz-box-title">Mục đích nghiệp vụ</div>
+              <p>Endpoint này cho phép Sales/BD nhìn vào con số <em>sau khi đã trừ chi phí gửi mẫu</em>, phản ánh sát hơn với P&amp;L thực tế của chiến dịch KOC. Ví dụ: GMV = 200 triệu, chi phí sample = 15 triệu → Doanh thu thực = 185 triệu.</p>
+            </div>
+          </div>
+          <div class="pane pad" data-t="logic">
+            <div class="fml">
+              <div class="fml-lbl">Công thức</div>
+actualRevenue = SUM(order_payments.total_amount) &minus; totalCostSampleOrders<br><br>
+<span class="cm">// GMV chỉ tính đơn:</span><br>
+<span class="cm">// - source = 'AFFILIATE' (đơn từ link affiliate creator)</span><br>
+<span class="cm">// - cancel_time IS NULL    (chưa bị seller huỷ)</span><br>
+<span class="cm">// - cancel_reason IS NULL  (chưa có lý do hoàn trả)</span><br>
+<span class="cm">// - creator_username IS NOT NULL (có creator)</span>
+            </div>
+            <p class="p">Luồng thực thi: <strong>2 queries tuần tự</strong> — (1) SQL tính tổng GMV affiliate với điều kiện lọc, (2) gọi <code>getSampleProductCosts(userId, dto)</code> với cùng bộ tham số để lấy <code>totalCostSampleOrders</code>. Trừ (2) khỏi (1) trả về kết quả.</p>
+          </div>
+          <div class="pane pad" data-t="query">
+            <div class="cw">
+              <div class="ct"><span class="cl">SQL</span><span class="cn">Tổng GMV affiliate — loại cancel, loại hoàn</span></div>
+              <pre><code><span class="sq">SELECT</span> <span class="fn">SUM</span>(p.total_amount) <span class="sq">AS</span> <span class="st">"actualRevenue"</span>
+<span class="sq">FROM</span>   <span class="sa">orders</span> o
+<span class="sq">LEFT JOIN</span> <span class="sa">order_payments</span> p <span class="sq">ON</span> o.order_id = p.order_id
+<span class="sq">WHERE</span>  o.create_time       <span class="sq">BETWEEN</span> $<span class="nm">1</span> <span class="sq">AND</span> $<span class="nm">2</span>
+  <span class="sq">AND</span>  o.cancel_time        <span class="sq">IS NULL</span>   <span class="cm">-- chưa bị seller huỷ</span>
+  <span class="sq">AND</span>  o.cancel_reason      <span class="sq">IS NULL</span>   <span class="cm">-- chưa có lý do hoàn trả</span>
+  <span class="sq">AND</span>  o.creator_username   <span class="sq">IS NOT NULL</span>
+  <span class="sq">AND</span>  o.source             = <span class="st">'AFFILIATE'</span>
+  <span class="sq">AND</span>  o.created_by         = $<span class="nm">3</span></code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AOV -->
+      <div class="ep" id="s-aov">
+        <div class="ep-head" onclick="tog(this)">
+          <span class="m m-get">GET</span>
+          <div class="ep-meta">
+            <div class="ep-path"><span class="dim">/orders/</span>average-order-value</div>
+            <div class="ep-desc">Giá trị đơn hàng trung bình (AOV)</div>
+            <div class="ep-biz">Mô tả: "Mỗi đơn hàng, khách trung bình chi bao nhiêu tiền?"</div>
+          </div>
+          <div class="ep-arrow">&#9660;</div>
+        </div>
+        <div class="ep-body">
+          <div class="tabs">
+            <button class="tb on" onclick="stab(this,'biz')">Nghiệp vụ</button>
+            <button class="tb" onclick="stab(this,'query')">Query</button>
+          </div>
+          <div class="pane on pad" data-t="biz">
+            <div class="biz-box">
+              <div class="biz-box-title">Mục đích nghiệp vụ</div>
+              <p>AOV (Average Order Value) là chỉ số nhanh để đánh giá <strong>sức mua trung bình</strong> của khách hàng đến từ kênh affiliate/KOC. AOV thấp hơn kỳ vọng có thể là dấu hiệu creator đang thu hút sai tệp khách hàng, hoặc sản phẩm bundle cần được cải thiện.</p>
+              <p>Chỉ tính đơn <code>source = 'AFFILIATE'</code> có creator username — loại đơn shop thông thường ra để đo riêng hiệu quả kênh KOC.</p>
+            </div>
+            <div class="fml">
+              <div class="fml-lbl">Công thức</div>
+AOV = ROUND( SUM(payment) / NULLIF(COUNT(DISTINCT order_id), 0), 2 )<br><br>
+<span class="cm">// NULLIF tránh chia cho 0 khi không có đơn nào</span>
+            </div>
+          </div>
+          <div class="pane pad" data-t="query">
+            <div class="cw">
+              <div class="ct"><span class="cl">SQL</span><span class="cn">LATERAL — đảm bảo 1 payment per order</span></div>
+              <pre><code><span class="sq">SELECT</span>
+  <span class="fn">ROUND</span>(
+    <span class="fn">SUM</span>(p.payment) / <span class="fn">NULLIF</span>(<span class="fn">COUNT</span>(<span class="sq">DISTINCT</span> o.order_id), <span class="nm">0</span>),
+    <span class="nm">2</span>
+  ) <span class="sq">AS</span> <span class="st">"averageOrderValue"</span>
+<span class="sq">FROM</span> <span class="sa">orders</span> o
+<span class="sq">LEFT JOIN LATERAL</span> (
+  <span class="cm">-- correlated subquery: chạy riêng cho mỗi row orders</span>
+  <span class="sq">SELECT</span> payment <span class="sq">FROM</span> <span class="sa">order_payments</span>
+  <span class="sq">WHERE</span>  order_id = o.order_id
+  <span class="sq">LIMIT</span>  <span class="nm">1</span>  <span class="cm">-- lấy đúng 1, tránh fan-out</span>
+) p <span class="sq">ON true</span>
+<span class="sq">WHERE</span> o.is_sample_order = <span class="kw">false</span>
+  <span class="sq">AND</span> o.source          = <span class="st">'AFFILIATE'</span>
+  <span class="sq">AND</span> o.creator_username <span class="sq">IS NOT NULL</span>
+  <span class="sq">AND</span> o.buyer_user_id   <span class="sq">IS NOT NULL</span>
+  <span class="sq">AND</span> o.status          <span class="sq">NOT IN</span> (<span class="st">'CANCELLED'</span>)</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GOLDEN ORDER -->
+      <div class="ep" id="s-golden">
+        <div class="ep-head" onclick="tog(this)">
+          <span class="m m-get">GET</span>
+          <div class="ep-meta">
+            <div class="ep-path"><span class="dim">/orders/</span>time-golden-order</div>
+            <div class="ep-desc">Khung giờ vàng — Sliding Window trên SQL Window Function</div>
+            <div class="ep-biz">Mô tả: "Khung giờ nào có số lượng đơn hàng nhiều nhất [chỉ tính các đơn hàng Affiliate (đã bao gồm các đơn hoàn/hủy)] "</div>
+          </div>
+          <div class="ep-arrow">&#9660;</div>
+        </div>
+        <div class="ep-body">
+          <div class="tabs">
+            <button class="tb on" onclick="stab(this,'biz')">Nghiệp vụ</button>
+            <button class="tb" onclick="stab(this,'logic')">Thuật toán</button>
+            <button class="tb" onclick="stab(this,'query')">Query</button>
+          </div>
+          <div class="pane on pad" data-t="biz">
+            <div class="biz-box">
+              <div class="biz-box-title">Mục đích nghiệp vụ</div>
+              <p>Trong TikTok Shop, thời điểm đăng video ảnh hưởng trực tiếp đến tỉ lệ chuyển đổi. Creator/seller muốn biết <strong>khung giờ nào trong ngày hệ thống ghi nhận nhiều đơn nhất</strong> — để lên lịch flash deal, đẩy thông báo hay nhắc creator đăng video đúng lúc.</p>
+              <p>Endpoint trả về 4 thông tin: <code>today.goldenFrame</code> (khung giờ vàng hôm nay), <code>total.goldenFrame</code> (tổng hợp toàn lịch sử), <code>today.hourlyStats</code> (array 24 phần tử số đơn theo giờ), và <code>bestDay</code> (ngày có tổng đơn cao nhất trong kỳ).</p>
+            </div>
+            <div class="grid2">
+              <div class="gi"><div class="gi-k">today.goldenFrame</div><div class="gi-v">Khung giờ vàng hôm nay — format <strong>"H–H+windowSize"</strong>. Dùng để ra quyết định realtime.</div></div>
+              <div class="gi"><div class="gi-k">total.goldenFrame</div><div class="gi-v">Khung giờ vàng tổng hợp toàn lịch sử trong kỳ. Dùng cho chiến lược dài hạn.</div></div>
+              <div class="gi"><div class="gi-k">today.hourlyStats</div><div class="gi-v">Array 24 phần tử — số đơn theo từng giờ hôm nay. Dùng để vẽ biểu đồ phân phối.</div></div>
+              <div class="gi"><div class="gi-k">bestDay</div><div class="gi-v">Ngày có tổng đơn cao nhất trong date range. Dùng để phân tích sự kiện/trend theo ngày.</div></div>
+            </div>
+          </div>
+          <div class="pane pad" data-t="logic">
+            <p class="p"><strong>Thuật toán Sliding Window</strong>: với <code>windowSize = 1</code> (cố định trong code hiện tại), tìm giờ <em>h</em> sao cho tổng đơn trong khoảng <code>[h, h + windowSize)</code> là lớn nhất. Về mặt kỹ thuật, đây là bài toán "maximum subarray sum" trên mảng 24 phần tử — được giải bằng SQL Window Function thay vì vòng lặp để tận dụng index.</p>
+            <div class="fml">
+              <div class="fml-lbl">Sliding Window</div>
+win_sum(h) = SUM(orders) trong [h, h + windowSize)<br><br>
+goldenHour = argmax(win_sum)<br>
+goldenFrame = "goldenHour:00 – (goldenHour + windowSize):00"<br><br>
+<span class="cm">// generate_series(0, 23) đảm bảo đủ 24 giờ</span><br>
+<span class="cm">// kể cả giờ không có đơn nào (COUNT = 0)</span>
+            </div>
+            <div class="co co-info">
+              <span class="co-icon">ℹ</span>
+              <div><b>Tại sao dùng generate_series?</b><p>Nếu giờ 3 AM không có đơn nào, query GROUP BY sẽ không trả về row cho giờ đó. Sliding window sẽ bị sai vì mảng thiếu phần tử. <code>generate_series(0, 23)</code> tạo đủ 24 rows trước rồi LEFT JOIN với data thực — giờ không có đơn sẽ có COUNT = 0 thay vì bị bỏ qua.</p></div>
+            </div>
+          </div>
+          <div class="pane pad" data-t="query">
+            <div class="cw">
+              <div class="ct"><span class="cl">PostgreSQL CTE</span><span class="cn">Window Function — ROWS BETWEEN CURRENT ROW AND N FOLLOWING</span></div>
+              <pre><code><span class="sq">WITH</span> hours <span class="sq">AS</span> (
+  <span class="cm">-- đảm bảo đủ 24 rows, kể cả giờ không có đơn</span>
+  <span class="sq">SELECT</span> generate_series(<span class="nm">0</span>, <span class="nm">23</span>) <span class="sq">AS</span> hour
+),
+agg <span class="sq">AS</span> (
+  <span class="sq">SELECT</span>
+    h.hour,
+    <span class="fn">COUNT</span>(b.hour) <span class="sq">FILTER</span> (<span class="sq">WHERE</span> b.is_today) <span class="sq">AS</span> today_total,
+    <span class="fn">COUNT</span>(b.hour)                               <span class="sq">AS</span> total_all
+  <span class="sq">FROM</span> hours h <span class="sq">LEFT JOIN</span> base_all b <span class="sq">ON</span> b.hour = h.hour
+  <span class="sq">GROUP BY</span> h.hour
+),
+win_today <span class="sq">AS</span> (
+  <span class="sq">SELECT</span>
+    hour,
+    <span class="fn">SUM</span>(today_total) <span class="sq">OVER</span> (
+      <span class="sq">ORDER BY</span> hour
+      <span class="cm">-- sliding window: cộng windowSize giờ liên tiếp</span>
+      <span class="sq">ROWS BETWEEN CURRENT ROW AND</span> $<span class="nm">2</span> - <span class="nm">1</span> <span class="sq">FOLLOWING</span>
+    ) <span class="sq">AS</span> win_sum
+  <span class="sq">FROM</span> agg
+)
+<span class="sq">SELECT</span> hour, win_sum <span class="sq">FROM</span> win_today
+<span class="sq">ORDER BY</span> win_sum <span class="sq">DESC</span>, hour <span class="sq">ASC LIMIT</span> <span class="nm">1</span>
+<span class="cm">-- ORDER BY hour ASC khi win_sum bằng nhau: ưu tiên giờ sớm hơn</span></code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ 03 · CREATOR / KOC ═══════════════ -->
+    <div class="sec" id="s-collab-list">
+      <div class="sec-head">
+        <div class="sec-num">03 · Creator &amp; KOC</div>
+        <div class="sec-title">Phân tích Creator &amp; KOC</div>
+        <p class="sec-note">Đo lường toàn bộ pipeline hợp tác — từ gửi sample đến phát sinh doanh thu thực. Nhóm chức năng quan trọng nhất với seller dùng mô hình KOC marketing.</p>
+      </div>
+
+      <!-- COLLAB LIST -->
+      <div class="ep open" id="s-collab-list-ep">
+        <div class="ep-head" onclick="tog(this)">
+          <span class="m m-get">GET</span>
+          <div class="ep-meta">
+            <div class="ep-path"><span class="dim">/orders/</span>collaborated-creator/list</div>
+            <div class="ep-desc">Creator đã hợp tác — stats đơn hàng thực tế từ video của họ</div>
+            <div class="ep-biz">Mô tả: "Creator nào đã nhận sample và tạo ra bao nhiêu đơn hàng thực?"</div>
+          </div>
+          <div class="ep-arrow">&#9660;</div>
+        </div>
+        <div class="ep-body">
+          <div class="tabs">
+            <button class="tb on" onclick="stab(this,'biz')">Nghiệp vụ</button>
+            <button class="tb" onclick="stab(this,'logic')">Logic</button>
+            <button class="tb" onclick="stab(this,'query')">Query</button>
+          </div>
+          <div class="pane on pad" data-t="biz">
+            <div class="biz-box">
+              <div class="biz-box-title">Mục đích nghiệp vụ</div>
+              <p>Đây là "bảng hiệu quả" của từng creator trong danh sách hợp tác. Seller cần biết: creator nào đã nhận sample, đã đăng video chưa, và video đó tạo ra bao nhiêu đơn thực tế (không phải sample). Thông tin này dùng để <strong>ra quyết định tái hợp tác</strong> — creator nào ROI tốt thì gửi thêm sample, creator nào nhận sample mà không tạo đơn thì cắt giảm.</p>
+              <p>Điểm phức tạp: cần map từ <code>productCreatorContents.productId</code> (sản phẩm trong content) sang <code>orderLineItems.productId</code> (sản phẩm trong đơn hàng) để xác định video nào đã được đăng cho sản phẩm nào.</p>
+            </div>
+          </div>
+          <div class="pane pad" data-t="logic">
+            <p class="p">Luồng <strong>2 queries tuần tự</strong>, sau đó merge in-memory. Toàn bộ sort, filter, paginate chạy sau khi đã load hết data vào RAM — không phân trang ở DB.</p>
+            <div class="flow">
+              <div class="fstep hi">
+                <div class="fnum">1</div>
+                <div class="ftxt"><strong>Query sample orders</strong><span><code>isSampleOrder = true</code> → eager-load chain: order → orderCreatorContents → creatorContent → productCreatorContents. Build <code>Map[creatorUsername → ICreatorStats]</code>.</span></div>
+              </div>
+              <div class="fstep hi">
+                <div class="fnum">2</div>
+                <div class="ftxt"><strong>Xác định video đã đăng</strong><span>Thu thập tất cả <code>productId</code> đã có content liên kết vào <code>Set</code>. So khớp với <code>orderLineItems.productId</code> trong đơn để đánh dấu từng sản phẩm là <code>isPosted</code>.</span></div>
+              </div>
+              <div class="fstep">
+                <div class="fnum">3</div>
+                <div class="ftxt"><strong>Query customer orders</strong><span>Lấy đơn hàng thực tế (<code>isSampleOrder = false</code>) của các creator đã tìm ở bước 1, JOIN orderPayments để lấy <code>totalAmount</code>.</span></div>
+              </div>
+              <div class="fstep hi">
+                <div class="fnum">4</div>
+                <div class="ftxt"><strong>Merge vào Map</strong><span>Cộng <code>totalOrders</code>, <code>totalPaidOrders</code>, <code>totalOrderCancelled</code> vào stats object của từng creator trong Map.</span></div>
+              </div>
+              <div class="fstep">
+                <div class="fnum">5</div>
+                <div class="ftxt"><strong>Filter → Sort → Slice</strong><span>In-memory: lọc theo <code>search</code> → sort theo <code>sortBy</code> → <code>slice((page-1)*take, page*take)</code>.</span></div>
+              </div>
+            </div>
+            <div class="lbl">Cách xác định video đã đăng (per sản phẩm)</div>
+            <div class="cw">
+              <div class="ct"><span class="cl">TypeScript</span><span class="cn">So khớp productId giữa content và line item</span></div>
+              <pre><code><span class="cm">// Bước 1: Thu thập tất cả productId có content liên kết</span>
+<span class="kw">const</span> postedProductIds = <span class="kw">new</span> Set&lt;<span class="tp">string</span>&gt;();
+<span class="kw">for</span> (<span class="kw">const</span> occ <span class="kw">of</span> order.orderCreatorContents ?? []) {
+  <span class="kw">for</span> (<span class="kw">const</span> pcc <span class="kw">of</span> occ?.creatorContent?.productCreatorContents ?? []) {
+    <span class="kw">if</span> (pcc?.productId) postedProductIds.<span class="fn">add</span>(pcc.productId.<span class="fn">toString</span>());
+  }
+}
+
+<span class="cm">// Bước 2: Kiểm tra từng sản phẩm trong đơn hàng</span>
+<span class="kw">for</span> (<span class="kw">const</span> item <span class="kw">of</span> order.orderLineItems) {
+  <span class="kw">if</span> (!item.productId) <span class="kw">continue</span>;
+  <span class="kw">const</span> isPosted = postedProductIds.<span class="fn">has</span>(item.productId.<span class="fn">toString</span>());
+
+  <span class="cm">// Chỉ đếm unposted khi đơn DELIVERED hoặc COMPLETED</span>
+  <span class="kw">if</span> (!isPosted && [<span class="st">'DELIVERED'</span>, <span class="st">'COMPLETED'</span>].<span class="fn">includes</span>(order.status)) {
+    stats.totalUnpostedVideo++;
+  }
+}</code></pre>
+            </div>
+          </div>
+          <div class="pane pad" data-t="query">
+            <div class="cw">
+              <div class="ct"><span class="cl">TypeORM</span><span class="cn">Eager-load chain 4 cấp: order → content → product</span></div>
+              <pre><code>ordersRepository
+  .<span class="fn">createQueryBuilder</span>(<span class="st">'o'</span>)
+  .<span class="fn">leftJoinAndSelect</span>(<span class="st">'o.orderCreatorContents'</span>, <span class="st">'ooc'</span>)
+  .<span class="fn">leftJoinAndSelect</span>(
+    <span class="st">'ooc.creatorContent'</span>, <span class="st">'cc'</span>,
+    <span class="st">'cc.contentId IS NOT NULL'</span>  <span class="cm">// chỉ join content đã tồn tại</span>
+  )
+  .<span class="fn">leftJoinAndSelect</span>(<span class="st">'cc.productCreatorContents'</span>, <span class="st">'pcc'</span>)
+  .<span class="fn">innerJoinAndSelect</span>(
+    <span class="st">'o.orderLineItems'</span>, <span class="st">'oli'</span>,
+    <span class="st">'oli.deletedAt IS NULL AND oli.productId IS NOT NULL'</span>
+  )
+  .<span class="fn">where</span>(<span class="st">'o.isSampleOrder = true AND o.creatorUsername IS NOT NULL'</span>)
+  .<span class="fn">andWhere</span>(<span class="st">'o.sellerId = :sellerId'</span>, { sellerId })
+  .<span class="fn">getMany</span>();</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COLLAB OVERVIEW -->
+      <div class="ep" id="s-collab-ov">
+        <div class="ep-head" onclick="tog(this)">
+          <span class="m m-get">GET</span>
+          <div class="ep-meta">
+            <div class="ep-path"><span class="dim">/orders/</span>collaborated-creator/overview</div>
+            <div class="ep-desc">Tổng quan trạng thái sample &amp; content</div>
+            <div class="ep-biz">Mô tả: "Bao nhiêu creator đã đăng video? Trong số đó bao nhiêu video mang lại đơn hàng trả tiền?"</div>
+          </div>
+          <div class="ep-arrow">&#9660;</div>
+        </div>
+        <div class="ep-body">
+          <div class="tabs">
+            <button class="tb on" onclick="stab(this,'biz')">Nghiệp vụ</button>
+            <button class="tb" onclick="stab(this,'logic')">Logic</button>
+          </div>
+          <div class="pane on pad" data-t="biz">
+            <div class="biz-box">
+              <div class="biz-box-title">Mục đích nghiệp vụ</div>
+              <p>Endpoint này cung cấp <strong>bức tranh tổng thể funnel KOC</strong> theo đơn hàng: bao nhiêu đơn sample đã giao → bao nhiêu creator đã đăng video → trong số đó bao nhiêu video tạo ra đơn hàng thực có thanh toán (<code>hasPaidOrder = true</code>) vs. chỉ tạo đơn chưa thanh toán.</p>
+              <p><strong>Đơn vị đếm là đơn hàng (order), không phải video hay creator.</strong> Một creator có thể có nhiều đơn sample; mỗi đơn được phân loại độc lập.</p>
+            </div>
+            <div class="co co-info">
+              <span class="co-icon">ℹ</span>
+              <div><b>Bucket ưu tiên hasPaid:</b><p>Nếu một đơn vừa có content <code>hasPaidOrder = true</code> vừa có content <code>hasPaidOrder = false</code>, đơn đó chỉ được tính vào bucket <strong>hasPaid</strong>. Logic: <code>if (hasPaid) count++; if (!hasPaid && hasNoPaid) countNoPaid++</code> — không phải else-if đơn giản.</p></div>
+            </div>
+          </div>
+          <div class="pane pad" data-t="logic">
+            <div class="cw">
+              <div class="ct"><span class="cl">TypeScript</span><span class="cn">Phân loại content per order — hasPaidOrder bucket</span></div>
+              <pre><code><span class="kw">const</span> contents = order.orderCreatorContents
+  ?.<span class="fn">map</span>(ooc => ooc.creatorContent)
+  .<span class="fn">filter</span>((c): c <span class="kw">is</span> CreatorContent => <span class="fn">Boolean</span>(c)) ?? [];
+
+<span class="kw">if</span> (contents.length === <span class="nm">0</span>) {
+  notPostedVideo++;  <span class="cm">// DELIVERED nhưng không có content → còn nợ video</span>
+  <span class="kw">return</span>;
+}
+
+postedVideo++;  <span class="cm">// có ít nhất 1 content được liên kết</span>
+
+<span class="kw">const</span> hasPaid   = contents.<span class="fn">some</span>(c => c.hasPaidOrder === <span class="kw">true</span>);
+<span class="kw">const</span> hasNoPaid = contents.<span class="fn">some</span>(c => c.hasPaidOrder === <span class="kw">false</span>);
+
+<span class="kw">if</span> (hasPaid)               postedVideoHasPaidOrder++;
+<span class="kw">if</span> (!hasPaid && hasNoPaid) postedVideoNoPaidOrder++;
+<span class="cm">// Vừa có hasPaid=true vừa false → chỉ tính vào bucket hasPaid</span></code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- UNPOSTED -->
+      <div class="ep" id="s-unposted">
+        <div class="ep-head" onclick="tog(this)">
+          <span class="m m-get">GET</span>
+          <div class="ep-meta">
+            <div class="ep-path"><span class="dim">/orders/</span>creator-unposted-video</div>
+            <div class="ep-desc">Creator nhận sample DELIVERED nhưng chưa có content nào</div>
+            <div class="ep-biz">Mô tả: "Creator nào đã nhận hàng và đang nợ video? Nợ bao nhiêu ngày rồi?"</div>
+          </div>
+          <div class="ep-arrow">&#9660;</div>
+        </div>
+        <div class="ep-body">
+          <div class="tabs">
+            <button class="tb on" onclick="stab(this,'biz')">Nghiệp vụ</button>
+            <button class="tb" onclick="stab(this,'logic')">Logic &amp; Công thức</button>
+            <button class="tb" onclick="stab(this,'query')">Query</button>
+          </div>
+          <div class="pane on pad" data-t="biz">
+            <div class="biz-box">
+              <div class="biz-box-title">Mục đích nghiệp vụ</div>
+              <p>Đây là danh sách <strong>"nợ video"</strong> — creator đã nhận hàng (status DELIVERED/COMPLETED) nhưng chưa upload bất kỳ content nào. Seller dùng để follow up, nhắc creator, hoặc quyết định không hợp tác thêm. <code>delayDays</code> tính từ ngày tạo đơn đến hôm nay — creator nợ lâu hơn được sort lên đầu.</p>
+              <p>Chỉ số <code>kocOwingRate</code> cho biết tỉ lệ creator đang nợ video so với tổng số creator đã hợp tác — dùng để đánh giá chất lượng pool creator hiện tại.</p>
+            </div>
+          </div>
+          <div class="pane pad" data-t="logic">
+            <div class="fml">
+              <div class="fml-lbl">Công thức delayDays &amp; kocOwingRate</div>
+delayDays    = moment().diff(order.createTime, 'days')<br><br>
+<span class="cm">// Sort theo tổng delayDays của tất cả sản phẩm trong đơn</span><br>
+totalDelay   = SUM(item.delayDays for item in sampleProducts)<br>
+<span class="cm">// Dùng tổng này để sort, không sort từng item riêng lẻ</span><br><br>
+kocOwingRate = kocOwingCount / totalCollaboratedCreators &times; 100
+            </div>
+            <div class="co co-warn">
+              <span class="co-icon">⚠</span>
+              <div><b>Điều kiện trạng thái đơn:</b><p>Chỉ tính creator là "đang nợ" khi đơn có status <strong>DELIVERED hoặc COMPLETED</strong>. Đơn đang PENDING hoặc IN_TRANSIT chưa tính — creator chưa nhận được hàng thực sự.</p></div>
+            </div>
+          </div>
+          <div class="pane pad" data-t="query">
+            <div class="cw">
+              <div class="ct"><span class="cl">TypeORM</span><span class="cn">cc.id IS NULL sau left join — đơn không có content</span></div>
+              <pre><code>.<span class="fn">leftJoinAndSelect</span>(<span class="st">'o.orderCreatorContents'</span>, <span class="st">'ooc'</span>)
+.<span class="fn">leftJoinAndSelect</span>(<span class="st">'ooc.creatorContent'</span>, <span class="st">'cc'</span>)
+.<span class="fn">where</span>(
+  <span class="st">`o.isSampleOrder = :isSampleOrder
+  AND o.status IN (:...status)
+  AND o.creatorUsername IS NOT NULL
+  AND cc.id IS NULL`</span>,  <span class="cm">// ← điều kiện cốt lõi: không có content</span>
+  {
+    isSampleOrder: <span class="kw">true</span>,
+    status: [<span class="st">'DELIVERED'</span>, <span class="st">'COMPLETED'</span>]
+  }
+)</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- KOC LOYAL -->
+      <div class="ep" id="s-loyal">
+        <div class="ep-head" onclick="tog(this)">
+          <span class="m m-get">GET</span>
+          <div class="ep-meta">
+            <div class="ep-path"><span class="dim">/orders/</span>koc-loyal/list</div>
+            <div class="ep-desc">KOC trung thành — tự mua sản phẩm, không nhận sample từ seller</div>
+            <div class="ep-biz">Mô tả: "Creator nào tự bỏ tiền mua sản phẩm để review, không cần seller gửi mẫu?"</div>
+          </div>
+          <div class="ep-arrow">&#9660;</div>
+        </div>
+        <div class="ep-body">
+          <div class="tabs">
+            <button class="tb on" onclick="stab(this,'biz')">Nghiệp vụ</button>
+            <button class="tb" onclick="stab(this,'logic')">Logic &amp; Công thức</button>
+          </div>
+          <div class="pane on pad" data-t="biz">
+            <div class="biz-box">
+              <div class="biz-box-title">Mục đích nghiệp vụ</div>
+              <p>KOC trung thành là creator có giá trị cao nhất trong hệ sinh thái — họ tự mua sản phẩm để dùng và review <em>mà không cần seller mời hợp tác</em>. Đây là dấu hiệu <strong>organic advocacy</strong> rất mạnh. Seller cần ưu tiên những creator này để mời vào chương trình chính thức, vì khả năng convert của họ thường cao hơn creator nhận sample.</p>
+              <p>Hai flag xác định: <code>isCrawlReceivedSample = true</code> (hệ thống crawl xác nhận creator đã dùng sản phẩm) và <code>isReceivedSample = false</code> (không nhận sample từ seller — tự tìm nguồn riêng).</p>
+            </div>
+          </div>
+          <div class="pane pad" data-t="logic">
+            <div class="grid2">
+              <div class="gi"><div class="gi-k">isCrawlReceivedSample = true</div><div class="gi-v">System crawl xác nhận creator <strong>đã sử dụng</strong> sản phẩm thực tế (có bằng chứng).</div></div>
+              <div class="gi"><div class="gi-k">isReceivedSample = false</div><div class="gi-v">Creator <strong>KHÔNG</strong> nhận sample từ seller — tự bỏ tiền mua hoặc tự có nguồn.</div></div>
+            </div>
+            <div class="fml">
+              <div class="fml-lbl">Công thức tỉ lệ KOC trung thành</div>
+baseQuery  = isCrawlReceivedSample = true   <span class="cm">// tổng creator đã crawl</span><br>
+loyalQuery = baseQuery + isReceivedSample = false  <span class="cm">// subset trung thành</span><br><br>
+kocLoyalRate = COUNT(loyal) / COUNT(base) &times; 100
+            </div>
+            <div class="cw">
+              <div class="ct"><span class="cl">TypeScript</span><span class="cn">Clone query trước khi thêm filter loyal</span></div>
+              <pre><code><span class="kw">const</span> baseQuery = query.<span class="fn">clone</span>();  <span class="cm">// clone để dùng lại cho cả 2</span>
+
+<span class="cm">// Tổng creator đã được crawl xác nhận dùng sản phẩm</span>
+<span class="kw">const</span> { cnt: totalCreatorContents } = <span class="kw">await</span> baseQuery
+  .<span class="fn">select</span>(<span class="st">'COUNT(DISTINCT cc.creatorUsername)'</span>, <span class="st">'cnt'</span>)
+  .<span class="fn">getRawOne</span>();
+
+<span class="cm">// Tập con: creator tự mua, không nhận sample</span>
+<span class="kw">const</span> creatorContents = <span class="kw">await</span> query
+  .<span class="fn">andWhere</span>(<span class="st">'cc.isReceivedSample = :v'</span>, { v: <span class="kw">false</span> })
+  .<span class="fn">getMany</span>();
+
+kocLoyalRate = (creatorContents.length / totalCreatorContents) * <span class="nm">100</span>;</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PARTNER STATS -->
+      <div class="ep" id="s-partner">
+        <div class="ep-head" onclick="tog(this)">
+          <span class="m m-get">GET</span>
+          <div class="ep-meta">
+            <div class="ep-path"><span class="dim">/orders/</span>partner-managerment-statistics</div>
+            <div class="ep-desc">Thống kê đối tác — avg ngày đăng video, tổng creator, KOC có sales</div>
+            <div class="ep-biz">Mô tả: "Trung bình creator mất bao lâu để đăng video sau khi nhận hàng?"</div>
+            <div class="tag-row"><span class="t t-par">Parallel</span></div>
+          </div>
+          <div class="ep-arrow">&#9660;</div>
+        </div>
+        <div class="ep-body">
+          <div class="tabs">
+            <button class="tb on" onclick="stab(this,'biz')">Nghiệp vụ</button>
+            <button class="tb" onclick="stab(this,'logic')">Logic &amp; Công thức</button>
+          </div>
+          <div class="pane on pad" data-t="biz">
+            <div class="biz-box">
+              <div class="biz-box-title">Mục đích nghiệp vụ</div>
+              <p>Chỉ số <strong>avgDays</strong> (trung bình ngày từ giao hàng đến đăng video) là KPI quan trọng trong hợp đồng với đối tác/partner. Nhiều seller yêu cầu creator đăng video trong vòng 7 ngày sau nhận hàng — <code>avgDays</code> cho biết thực tế đang ở mức nào so với cam kết.</p>
+              <p><code>totalKocHasSales</code> lấy từ TikTok API (không phải DB nội bộ) nên được gọi riêng, không vào Promise.all cùng 2 truy vấn DB.</p>
+            </div>
+          </div>
+          <div class="pane pad" data-t="logic">
+            <div class="fml">
+              <div class="fml-lbl">Công thức avgDays</div>
+<span class="cm">// Điều kiện tính một cặp (order, content):</span><br>
+<span class="cm">// order.source = 'SHOP' (không phải AFFILIATE)</span><br>
+<span class="cm">// cc.isCrawlReceivedSample = true AND cc.isReceivedSample = true</span><br>
+<span class="cm">// cc.publishedAt IS NOT NULL AND order.deliveryTime IS NOT NULL</span><br>
+<span class="cm">// diffDays >= 0 (không tính ngược — đăng trước khi nhận hàng)</span><br><br>
+diffDays   = publishedAt - deliveryTime (in days)<br>
+avgDays    = SUM(diffDays) / COUNT(valid pairs)<br>
+avgDays    = null nếu không có cặp nào hợp lệ
+            </div>
+            <div class="cw">
+              <div class="ct"><span class="cl">TypeScript</span><span class="cn">Promise.all — 2 DB queries song song, TikTok API riêng</span></div>
+              <pre><code><span class="kw">const</span> [avgTimeRes, totalCollaborated] = <span class="kw">await</span> Promise.<span class="fn">all</span>([
+  <span class="kw">this</span>.<span class="fn">getAvgTimeToPostVideoAfterSample</span>(sellerId, startTime, endTime),
+  <span class="kw">this</span>.<span class="fn">getTotalCollaboratedCreators</span>(sellerId, startTime, endTime),
+]);
+<span class="cm">// totalKocHasSales: gọi TikTok API riêng — không vào Promise.all</span>
+
+<span class="kw">const</span> diffDays = moment(cc.publishedAt).<span class="fn">diff</span>(
+  moment(order.deliveryTime), <span class="st">'days'</span>, <span class="kw">true</span>
+);
+<span class="kw">if</span> (diffDays >= <span class="nm">0</span>) {    <span class="cm">// loại trường hợp đăng trước nhận hàng</span>
+  totalDiffDays += diffDays;
+  totalContents++;
+}
+averageDays = totalContents > <span class="nm">0</span> ? totalDiffDays / totalContents : <span class="kw">null</span>;</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GMV KOC -->
+      <div class="ep" id="s-gmv">
+        <div class="ep-head" onclick="tog(this)">
+          <span class="m m-get">GET</span>
+          <div class="ep-meta">
+            <div class="ep-path"><span class="dim">/orders/</span>gmv-by-koc</div>
+            <div class="ep-desc">GMV tổng hợp của KOC — chỉ tính VIDEO content, bỏ LIVE</div>
+            <div class="ep-biz">Mô tả: "Tổng GMV creator này tạo ra thông qua video (không tính livestream)?"</div>
+          </div>
+          <div class="ep-arrow">&#9660;</div>
+        </div>
+        <div class="ep-body">
+          <div class="tabs">
+            <button class="tb on" onclick="stab(this,'biz')">Nghiệp vụ</button>
+            <button class="tb" onclick="stab(this,'query')">Query</button>
+          </div>
+          <div class="pane on pad" data-t="biz">
+            <div class="biz-box">
+              <div class="biz-box-title">Mục đích nghiệp vụ</div>
+              <p>TikTok Shop phân biệt 2 loại content: <strong>VIDEO</strong> (short-form, tồn tại lâu dài, có thể viral sau nhiều tuần) và <strong>LIVE</strong> (stream realtime, chỉ tạo GMV trong thời gian phát). Endpoint này chỉ tính GMV từ VIDEO để đo hiệu quả content dài hạn — tách biệt hoàn toàn với GMV từ live stream.</p>
+              <p>Dùng khi seller muốn đánh giá creator nào giỏi làm video evergreen, không phụ thuộc vào việc có schedule live hay không.</p>
+            </div>
+          </div>
+          <div class="pane pad" data-t="query">
+            <div class="cw">
+              <div class="ct"><span class="cl">SQL</span><span class="cn">SUM total_paid_amount — VIDEO only, loại LIVE</span></div>
+              <pre><code><span class="sq">SELECT</span>
+  creator_username,
+  <span class="fn">COALESCE</span>(<span class="fn">SUM</span>(total_paid_amount), <span class="nm">0</span>)::<span class="tp">float</span> <span class="sq">AS</span> gmv
+<span class="sq">FROM</span>   <span class="sa">creator_content</span>
+<span class="sq">WHERE</span>  total_paid_amount <span class="sq">IS NOT NULL</span>
+  <span class="sq">AND</span>  total_paid_amount > <span class="nm">0</span>
+  <span class="sq">AND</span>  content_type = <span class="st">'VIDEO'</span>   <span class="cm">-- bỏ LIVE stream</span>
+  <span class="sq">AND</span>  creator_username = $<span class="nm">1</span>
+<span class="sq">GROUP BY</span> creator_username
+<span class="sq">ORDER BY</span> gmv <span class="sq">DESC</span></code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TOP CITY -->
+      <div class="ep" id="s-city">
+        <div class="ep-head" onclick="tog(this)">
+          <span class="m m-get">GET</span>
+          <div class="ep-meta">
+            <div class="ep-path"><span class="dim">/orders/</span>top-koc-beyond-city</div>
+            <div class="ep-desc">Top tỉnh thành — parse &amp; normalize địa chỉ giao hàng, đếm buyer duy nhất</div>
+            <div class="ep-biz">Mô tả: "Người mua hàng của creator này tập trung ở tỉnh thành nào?"</div>
+          </div>
+          <div class="ep-arrow">&#9660;</div>
+        </div>
+        <div class="ep-body">
+          <div class="tabs">
+            <button class="tb on" onclick="stab(this,'biz')">Nghiệp vụ</button>
+            <button class="tb" onclick="stab(this,'query')">Query</button>
+          </div>
+          <div class="pane on pad" data-t="biz">
+            <div class="biz-box">
+              <div class="biz-box-title">Mục đích nghiệp vụ</div>
+              <p>Phân tích địa lý của người mua hàng giúp seller hiểu <strong>phạm vi ảnh hưởng của creator</strong>. Creator ở Hà Nội có thể reach buyer miền Nam và ngược lại — hoặc ngược lại creator chỉ convert được trong tỉnh của họ. Thông tin này dùng để chọn creator phù hợp với chiến lược mở rộng thị trường địa lý.</p>
+              <p>Địa chỉ TikTok có format "Việt Nam, Tỉnh/TP X, Huyện Y, ..." — cần parse và normalize (loại tiền tố "Thành phố", "Tỉnh", chuẩn hóa tên Anh → Việt) trước khi group.</p>
+            </div>
+          </div>
+          <div class="pane pad" data-t="query">
+            <div class="cw">
+              <div class="ct"><span class="cl">PostgreSQL CTE</span><span class="cn">SPLIT_PART + REGEXP_REPLACE normalize địa chỉ Việt Nam</span></div>
+              <pre><code><span class="sq">WITH</span> CleanedCities <span class="sq">AS</span> (
+  <span class="sq">SELECT</span>
+    o.buyer_user_id,
+    <span class="sq">CASE</span>
+      <span class="sq">WHEN</span> r.full_address <span class="sq">LIKE</span> <span class="st">'Việt Nam, %'</span> <span class="sq">THEN</span>
+        <span class="fn">TRIM</span>(<span class="fn">REGEXP_REPLACE</span>(
+          <span class="fn">SPLIT_PART</span>(r.full_address, <span class="st">', '</span>, <span class="nm">2</span>),  <span class="cm">-- lấy phần tử thứ 2</span>
+          <span class="st">'^(Thành phố |Thành Phố |Tỉnh |Tinh )'</span>, <span class="st">''</span>
+        ))
+      <span class="sq">ELSE</span> <span class="st">'Khác'</span>  <span class="cm">-- địa chỉ không theo format chuẩn</span>
+    <span class="sq">END AS</span> raw_city
+  <span class="sq">FROM</span> <span class="sa">orders</span> o
+  <span class="sq">JOIN</span> <span class="sa">order_recipients</span> r <span class="sq">ON</span> o.order_id = r.order_id
+  <span class="sq">WHERE</span> o.source = <span class="st">'AFFILIATE'</span>
+    <span class="sq">AND</span> o.creator_username <span class="sq">IS NOT NULL</span>
+    <span class="sq">AND</span> o.create_time <span class="sq">BETWEEN</span> $<span class="nm">1</span> <span class="sq">AND</span> $<span class="nm">2</span>
+)
+<span class="sq">SELECT</span>
+  <span class="sq">CASE</span> raw_city
+    <span class="sq">WHEN</span> <span class="st">'Ha Noi'</span>   <span class="sq">THEN</span> <span class="st">'Hà Nội'</span>
+    <span class="sq">WHEN</span> <span class="st">'Khanh Hoa'</span> <span class="sq">THEN</span> <span class="st">'Khánh Hòa'</span>
+    <span class="cm">-- ... mapping thêm</span>
+    <span class="sq">ELSE</span> raw_city
+  <span class="sq">END AS</span> city,
+  <span class="fn">COUNT</span>(<span class="sq">DISTINCT</span> buyer_user_id) <span class="sq">AS</span> count
+<span class="sq">FROM</span> CleanedCities
+<span class="sq">GROUP BY</span> city
+<span class="sq">ORDER BY</span> count <span class="sq">DESC</span>
+<span class="sq">LIMIT</span> $<span class="nm">3</span></code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ 04 · CUSTOMER ═══════════════ -->
+    <div class="sec" id="s-newcust">
+      <div class="sec-head">
+        <div class="sec-num">04 · Customer Analytics</div>
+        <div class="sec-title">Phân tích khách hàng</div>
+        <p class="sec-note">Phân loại new vs returning, tỉ lệ quay lại, hành vi voucher — cốt lõi để đo chất lượng tệp khách hàng creator mang lại.</p>
+      </div>
+
+      <!-- NEW CUSTOMER -->
+      <div class="ep open" id="s-newcust-ep">
+        <div class="ep-head" onclick="tog(this)">
+          <span class="m m-get">GET</span>
+          <div class="ep-meta">
+            <div class="ep-path"><span class="dim">/orders/</span>percentage-new-customer-by-koc</div>
+            <div class="ep-desc">% Khách hàng mới — so sánh với toàn bộ lịch sử trước kỳ</div>
+            <div class="ep-biz">Mô tả: "Trong số khách mua qua creator này, bao nhiêu % là khách mua lần đầu tiên?"</div>
+          </div>
+          <div class="ep-arrow">&#9660;</div>
+        </div>
+        <div class="ep-body">
+          <div class="tabs">
+            <button class="tb on" onclick="stab(this,'biz')">Nghiệp vụ</button>
+            <button class="tb" onclick="stab(this,'logic')">Logic &amp; Công thức</button>
+            <button class="tb" onclick="stab(this,'query')">Query</button>
+          </div>
+          <div class="pane on pad" data-t="biz">
+            <div class="biz-box">
+              <div class="biz-box-title">Mục đích nghiệp vụ</div>
+              <p>Tỉ lệ khách mới cao có nghĩa creator đang <strong>mở rộng thị trường</strong> — đưa người chưa từng mua về seller. Tỉ lệ thấp có nghĩa creator chỉ đang phục vụ lại khách cũ — tốt cho retention nhưng không tốt cho growth. Hai creator có cùng GMV nhưng khác nhau về tỉ lệ khách mới sẽ có giá trị chiến lược rất khác nhau.</p>
+              <p><strong>Định nghĩa "khách mới"</strong>: buyer mua trong kỳ hiện tại mà KHÔNG có bất kỳ đơn nào trước thời điểm <code>startTime</code> (toàn bộ lịch sử, không giới hạn). Nếu họ mua tháng trước rồi mua lại tháng này — vẫn là khách cũ.</p>
+            </div>
+          </div>
+          <div class="pane pad" data-t="logic">
+            <div class="fml">
+              <div class="fml-lbl">Định nghĩa &amp; công thức</div>
+old_customers  = DISTINCT buyer_user_id WHERE create_time &lt; startTime<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;AND source='AFFILIATE' AND status!='CANCELLED'<br><br>
+new_customer   = buyer trong kỳ WHERE old_customers.buyer IS NULL<br>
+percentageNew  = newUniqueCustomers / totalUniqueCustomers &times; 100
+            </div>
+            <div class="co co-tip">
+              <span class="co-icon">★</span>
+              <div><b>Tại sao LEFT JOIN IS NULL thay vì NOT IN?</b><p><code>NOT IN (subquery)</code> phải re-evaluate subquery cho mỗi row — với bảng lớn sẽ rất chậm và không dùng được index. <strong>LEFT JOIN + IS NULL</strong> chỉ scan một lần, index-friendly hơn, và cũng xử lý đúng edge case khi subquery trả về NULL.</p></div>
+            </div>
+          </div>
+          <div class="pane pad" data-t="query">
+            <div class="cw">
+              <div class="ct"><span class="cl">PostgreSQL CTE</span><span class="cn">LEFT JOIN IS NULL — xác định khách mới hiệu quả</span></div>
+              <pre><code><span class="sq">WITH</span> old_customers <span class="sq">AS</span> (
+  <span class="sq">SELECT DISTINCT</span> buyer_user_id
+  <span class="sq">FROM</span>  <span class="sa">orders</span>
+  <span class="sq">WHERE</span> create_time  &lt; $<span class="nm">1</span>         <span class="cm">-- toàn bộ lịch sử trước startTime</span>
+    <span class="sq">AND</span>  source       = <span class="st">'AFFILIATE'</span>
+    <span class="sq">AND</span>  creator_username <span class="sq">IS NOT NULL</span>
+    <span class="sq">AND</span>  buyer_user_id    <span class="sq">IS NOT NULL</span>
+    <span class="sq">AND</span>  status        != <span class="st">'CANCELLED'</span>
+    <span class="sq">AND</span>  created_by    = $<span class="nm">3</span>
+),
+period_customers <span class="sq">AS</span> (
+  <span class="sq">SELECT</span>
+    o.buyer_user_id,
+    (oc.buyer_user_id <span class="sq">IS NULL</span>) <span class="sq">AS</span> is_new_customer
+  <span class="sq">FROM</span>  <span class="sa">orders</span> o
+  <span class="sq">LEFT JOIN</span> old_customers oc <span class="sq">ON</span> o.buyer_user_id = oc.buyer_user_id
+  <span class="sq">WHERE</span> o.create_time <span class="sq">BETWEEN</span> $<span class="nm">1</span> <span class="sq">AND</span> $<span class="nm">2</span>
+    <span class="sq">AND</span>  o.source     = <span class="st">'AFFILIATE'</span>
+    <span class="sq">AND</span>  o.status    != <span class="st">'CANCELLED'</span>
+    <span class="sq">AND</span>  o.created_by = $<span class="nm">3</span>
+)
+<span class="sq">SELECT</span>
+  <span class="fn">COUNT</span>(<span class="sq">DISTINCT</span> buyer_user_id) <span class="sq">AS</span> <span class="st">"totalUniqueCustomers"</span>,
+  <span class="fn">COUNT</span>(<span class="sq">DISTINCT CASE WHEN</span> is_new_customer <span class="sq">THEN</span> buyer_user_id <span class="sq">END</span>) <span class="sq">AS</span> <span class="st">"newUniqueCustomers"</span>,
+  <span class="fn">ROUND</span>(
+    <span class="fn">COUNT</span>(<span class="sq">DISTINCT CASE WHEN</span> is_new_customer <span class="sq">THEN</span> buyer_user_id <span class="sq">END</span>)::<span class="tp">numeric</span>
+    / <span class="fn">NULLIF</span>(<span class="fn">COUNT</span>(<span class="sq">DISTINCT</span> buyer_user_id), <span class="nm">0</span>) * <span class="nm">100</span>, <span class="nm">2</span>
+  ) <span class="sq">AS</span> <span class="st">"percentageNew"</span>
+<span class="sq">FROM</span> period_customers</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- REPEAT CUSTOMER -->
+      <div class="ep" id="s-repeat">
+        <div class="ep-head" onclick="tog(this)">
+          <span class="m m-get">GET</span>
+          <div class="ep-meta">
+            <div class="ep-path"><span class="dim">/orders/</span>repeat-customer-list</div>
+            <div class="ep-desc">Creator có khách quay lại — repeat rate &amp; level HIGH / MEDIUM / LOW</div>
+            <div class="ep-biz">Mô tả: "Creator nào xây dựng được tệp khách hàng trung thành, mua lại nhiều lần?"</div>
+          </div>
+          <div class="ep-arrow">&#9660;</div>
+        </div>
+        <div class="ep-body">
+          <div class="tabs">
+            <button class="tb on" onclick="stab(this,'biz')">Nghiệp vụ</button>
+            <button class="tb" onclick="stab(this,'logic')">Logic &amp; Công thức</button>
+            <button class="tb" onclick="stab(this,'query')">Query</button>
+          </div>
+          <div class="pane on pad" data-t="biz">
+            <div class="biz-box">
+              <div class="biz-box-title">Mục đích nghiệp vụ</div>
+              <p>Repeat customer rate là thước đo <strong>chất lượng cộng đồng</strong> của creator. Creator có <code>repeatRate</code> cao chứng tỏ họ xây dựng được niềm tin và tệp loyal audience — những người mua lại không cần được quảng cáo thêm. Đây là creator đáng đầu tư lâu dài.</p>
+              <p>Endpoint chỉ trả về creator có <em>ít nhất 1 repeat customer</em> (<code>HAVING COUNT > 0</code>). Creator không có repeat customer bị loại khỏi danh sách này — không phải bug.</p>
+            </div>
+          </div>
+          <div class="pane pad" data-t="logic">
+            <div class="fml">
+              <div class="fml-lbl">Công thức Repeat Rate &amp; Level</div>
+repeatRate  = totalRegularCustomer / totalUniqueBuyers &times; 100<br><br>
+<span class="cm">// repeatLevel tính phía JavaScript sau khi nhận SQL result</span><br>
+repeatLevel = rate &ge; 30%  &rarr;  "HIGH"<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rate &ge; 10%  &rarr;  "MEDIUM"<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rate &lt; 10%   &rarr;  "LOW"
+            </div>
+            <div class="cw">
+              <div class="ct"><span class="cl">TypeScript</span><span class="cn">repeatLevel — ternary chain phía JS</span></div>
+              <pre><code>repeatLevel: repeatRate >= <span class="nm">30</span> ? <span class="st">'HIGH'</span>
+           : repeatRate >= <span class="nm">10</span> ? <span class="st">'MEDIUM'</span>
+           :                     <span class="st">'LOW'</span></code></pre>
+            </div>
+            <div class="co co-info">
+              <span class="co-icon">ℹ</span>
+              <div><b>Avatar được enrich sau query:</b><p>SQL query lấy stats, avatar creator được fetch riêng từ <code>creator_profile_snapshot</code> qua JavaScript Map — <em>không JOIN trong SQL</em>. Lý do: tránh làm phức tạp câu query chính; avatar là thông tin display, không phải dữ liệu tính toán.</p></div>
+            </div>
+          </div>
+          <div class="pane pad" data-t="query">
+            <div class="cw">
+              <div class="ct"><span class="cl">SQL</span><span class="cn">HAVING — chỉ trả creator có ít nhất 1 repeat customer</span></div>
+              <pre><code><span class="sq">SELECT</span>
+  p.creator_username,
+  <span class="fn">COUNT</span>(<span class="sq">DISTINCT CASE WHEN</span> p.is_repeat <span class="sq">THEN</span> p.buyer_user_id <span class="sq">END</span>) <span class="sq">AS</span> <span class="st">"totalRegularCustomer"</span>,
+  <span class="fn">COUNT</span>(<span class="sq">DISTINCT</span> p.buyer_user_id)                                  <span class="sq">AS</span> <span class="st">"totalUniqueBuyers"</span>,
+  <span class="fn">SUM</span>(<span class="sq">CASE WHEN</span> p.is_repeat <span class="sq">THEN</span> <span class="fn">COALESCE</span>(op.total_amount, <span class="nm">0</span>) <span class="sq">ELSE</span> <span class="nm">0</span> <span class="sq">END</span>) <span class="sq">AS</span> <span class="st">"totalPayment"</span>
+<span class="sq">FROM</span> period_data p
+<span class="sq">LEFT JOIN</span> <span class="sa">order_payments</span> op
+  <span class="sq">ON</span> p.order_id = op.order_id <span class="sq">AND</span> op.deleted_at <span class="sq">IS NULL</span>
+<span class="sq">GROUP BY</span> p.creator_username
+<span class="sq">HAVING</span> <span class="fn">COUNT</span>(<span class="sq">DISTINCT CASE WHEN</span> p.is_repeat <span class="sq">THEN</span> p.buyer_user_id <span class="sq">END</span>) > <span class="nm">0</span>
+<span class="cm">-- Enrich avatar từ creator_profile_snapshot qua JS Map sau query</span></code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DASHBOARD -->
+      <div class="ep" id="s-dashboard">
+        <div class="ep-head" onclick="tog(this)">
+          <span class="m m-get">GET</span>
+          <div class="ep-meta">
+            <div class="ep-path"><span class="dim">/orders/</span>list-card-feature-customer</div>
+            <div class="ep-desc">Gộp 4 chỉ số khách hàng trong 1 request</div>
+            <div class="ep-biz">Aggregator endpoint — không có logic riêng, response time = call chậm nhất trong 4.</div>
+            <div class="tag-row"><span class="t t-par">Parallel</span></div>
+          </div>
+          <div class="ep-arrow">&#9660;</div>
+        </div>
+        <div class="ep-body">
+          <div class="tabs">
+            <button class="tb on" onclick="stab(this,'biz')">Nghiệp vụ</button>
+            <button class="tb" onclick="stab(this,'logic')">Logic</button>
+          </div>
+          <div class="pane on pad" data-t="biz">
+            <div class="biz-box">
+              <div class="biz-box-title">Mục đích nghiệp vụ</div>
+              <p>Endpoint "tổng hợp" cho dashboard — thay vì frontend gọi 4 request riêng lẻ, gọi 1 request này lấy về đủ 4 chỉ số: % khách mới, danh sách repeat customer, AOV, và doanh thu thực tế. Tiết kiệm round-trip và đơn giản hóa state management ở frontend.</p>
+              <p>Vì 4 sub-calls dùng <code>Promise.all</code>, response time bằng call chậm nhất trong 4 — thường là <code>getRepeatCustomerMetrics</code> do load nhiều data nhất.</p>
+            </div>
+          </div>
+          <div class="pane pad" data-t="logic">
+            <div class="cw">
+              <div class="ct"><span class="cl">TypeScript</span><span class="cn">Promise.all — 4 sub-calls song song</span></div>
+              <pre><code><span class="kw">const</span> [
+  percentageNewCustomerByKoc,
+  listRepeatCustomers,
+  averageOrderValue,
+  actualRevenue
+] = <span class="kw">await</span> Promise.<span class="fn">all</span>([
+  <span class="kw">this</span>.<span class="fn">getPercentageNewCustomerByKocSummary</span>(userId, dto),
+  <span class="kw">this</span>.<span class="fn">getRepeatCustomerMetrics</span>(userId, dto),
+  <span class="kw">this</span>.<span class="fn">averageOrderValue</span>(userId, dto),
+  <span class="kw">this</span>.<span class="fn">actualRevenue</span>(userId, dto),
+]);
+<span class="cm">// Response time = MAX(t1, t2, t3, t4) — không phải SUM</span></code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VOUCHER LIST -->
+      <div class="ep" id="s-voucher-list">
+        <div class="ep-head" onclick="tog(this)">
+          <span class="m m-get">GET</span>
+          <div class="ep-meta">
+            <div class="ep-path"><span class="dim">/orders/</span>voucher-customers</div>
+            <div class="ep-desc">Danh sách buyers đã dùng voucher — phân trang 2 bước theo buyerUserId</div>
+            <div class="ep-biz">Mô tả: "Khách nào đã dùng voucher? Có thể sort theo ngày nhận gần nhất hoặc số voucher nhiều nhất?"</div>
+          </div>
+          <div class="ep-arrow">&#9660;</div>
+        </div>
+        <div class="ep-body">
+          <div class="tabs">
+            <button class="tb on" onclick="stab(this,'biz')">Nghiệp vụ</button>
+            <button class="tb" onclick="stab(this,'logic')">Logic — 2-Step Pagination</button>
+            <button class="tb" onclick="stab(this,'query')">Query</button>
+          </div>
+          <div class="pane on pad" data-t="biz">
+            <div class="biz-box">
+              <div class="biz-box-title">Mục đích nghiệp vụ</div>
+              <p>Seller muốn biết <strong>ai là khách hàng thường xuyên dùng voucher</strong> để phân tích xem khách đó có mua vì loyalty hay chỉ vì giá rẻ. Khách dùng voucher nhiều nhưng không quay lại khi không có voucher là "deal hunter" — khác hoàn toàn với loyal customer.</p>
+            </div>
+          </div>
+          <div class="pane pad" data-t="logic">
+            <p class="p">Không thể dùng <code>OFFSET</code> thông thường vì cần group orders theo buyer — một buyer có nhiều orders = nhiều rows trong DB. <code>OFFSET</code> sẽ ngắt giữa các orders của cùng một buyer. Giải pháp: <strong>2-step pagination theo buyerUserId</strong>.</p>
+            <div class="flow">
+              <div class="fstep hi">
+                <div class="fnum">1</div>
+                <div class="ftxt"><strong>Đếm tổng buyers</strong><span><code>COUNT(DISTINCT buyerUserId)</code> → tổng số trang = CEIL(total / take).</span></div>
+              </div>
+              <div class="fstep hi">
+                <div class="fnum">2</div>
+                <div class="ftxt"><strong>Lấy buyerIds của trang hiện tại</strong><span>GROUP BY buyerUserId → ORDER BY sort expression → LIMIT/OFFSET → array IDs đúng thứ tự sort.</span></div>
+              </div>
+              <div class="fstep">
+                <div class="fnum">3</div>
+                <div class="ftxt"><strong>Load toàn bộ orders của buyerIds đó</strong><span><code>WHERE buyerUserId IN (...ids)</code> — lấy đầy đủ data cho từng buyer.</span></div>
+              </div>
+              <div class="fstep">
+                <div class="fnum">4</div>
+                <div class="ftxt"><strong>Enrich song song + preserve sort order</strong><span>Recipients + creator snapshots fetch song song. Map buyerId → entry, sắp xếp theo thứ tự buyerIds từ bước 2 để giữ đúng thứ tự sort.</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="pane pad" data-t="query">
+            <div class="cw">
+              <div class="ct"><span class="cl">TypeScript</span><span class="cn">Bước 2 — sortExprMap cho dynamic ORDER BY</span></div>
+              <pre><code><span class="kw">const</span> sortExprMap: Partial&lt;Record&lt;EFilter, <span class="tp">string</span>&gt;&gt; = {
+  [EFilter.LAST_RECEIVED_DATE]:     <span class="st">'MAX(o.createTime)'</span>,
+  [EFilter.TOTAL_VOUCHER_RECEIVED]: <span class="st">'COUNT(o.orderId)'</span>,
+};
+
+<span class="kw">const</span> buyerIdsRaw = <span class="kw">await</span> buildBaseQb()
+  .<span class="fn">select</span>(<span class="st">'o.buyerUserId'</span>, <span class="st">'buyer_user_id'</span>)
+  .<span class="fn">addSelect</span>(sortExpr, <span class="st">'sort_value'</span>)
+  .<span class="fn">groupBy</span>(<span class="st">'o.buyerUserId'</span>)
+  .<span class="fn">orderBy</span>(<span class="st">'sort_value'</span>, orderDir)
+  .<span class="fn">limit</span>(take).<span class="fn">offset</span>(offset)
+  .<span class="fn">getRawMany</span>&lt;{ buyer_user_id: <span class="tp">string</span> }&gt;();
+
+<span class="cm">// Bước 4: map và giữ đúng thứ tự sort từ bước 2</span>
+<span class="kw">const</span> orderedCustomers = buyerIds
+  .<span class="fn">map</span>(id => customerMap.<span class="fn">get</span>(id))
+  .<span class="fn">filter</span>((c): c <span class="kw">is</span> CustomerEntry => <span class="fn">Boolean</span>(c));</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VOUCHER STATS -->
+      <div class="ep" id="s-voucher-stats">
+        <div class="ep-head" onclick="tog(this)">
+          <span class="m m-get">GET</span>
+          <div class="ep-meta">
+            <div class="ep-path"><span class="dim">/orders/</span>voucher-customer-stats</div>
+            <div class="ep-desc">Fluctuation (daily) &amp; cumulative growth của đơn dùng voucher</div>
+            <div class="ep-biz">Mô tả: "Số đơn dùng voucher tăng hay giảm theo ngày? Tổng tích lũy đến hôm nay là bao nhiêu?"</div>
+          </div>
+          <div class="ep-arrow">&#9660;</div>
+        </div>
+        <div class="ep-body">
+          <div class="tabs">
+            <button class="tb on" onclick="stab(this,'biz')">Nghiệp vụ</button>
+            <button class="tb" onclick="stab(this,'logic')">Logic</button>
+          </div>
+          <div class="pane on pad" data-t="biz">
+            <div class="biz-box">
+              <div class="biz-box-title">Mục đích nghiệp vụ</div>
+              <p>Trả về 2 loại dữ liệu time-series cho biểu đồ: <strong>fluctuation</strong> (số đơn theo từng ngày — biểu đồ bar/line để thấy spike/drop) và <strong>cumulative growth</strong> (tổng tích lũy — biểu đồ area/line để thấy trend tổng thể). Cả hai dùng cùng một tập dữ liệu, chỉ khác cách tổng hợp.</p>
+            </div>
+          </div>
+          <div class="pane pad" data-t="logic">
+            <div class="co co-warn">
+              <span class="co-icon">⚠</span>
+              <div><b>Vấn đề timezone:</b><p>PostgreSQL lưu timestamp dạng UTC. Khi group theo ngày mà không xử lý timezone, đơn đặt lúc 23:00 giờ Việt Nam (UTC+7) sẽ bị gán sang ngày hôm sau theo UTC. Code offset thủ công <code>+7*60*60*1000ms</code> trước khi format thành <code>YYYY-MM-DD</code>.</p></div>
+            </div>
+            <div class="cw">
+              <div class="ct"><span class="cl">TypeScript</span><span class="cn">Timezone offset + cumulative từ dailyMap</span></div>
+              <pre><code><span class="cm">// UTC → UTC+7: offset thủ công</span>
+<span class="kw">const</span> dateKey = <span class="kw">new</span> Date(
+  <span class="kw">new</span> Date(order.createTime).<span class="fn">getTime</span>() + <span class="nm">7</span> * <span class="nm">60</span> * <span class="nm">60</span> * <span class="nm">1000</span>
+).<span class="fn">toISOString</span>().<span class="fn">slice</span>(<span class="nm">0</span>, <span class="nm">10</span>);  <span class="cm">// → "YYYY-MM-DD"</span>
+
+<span class="cm">// Sort tăng dần trước khi tính cumulative</span>
+<span class="kw">const</span> sortedDays = Object.<span class="fn">entries</span>(dailyMap)
+  .<span class="fn">sort</span>(([a], [b]) => a.<span class="fn">localeCompare</span>(b));
+
+<span class="kw">let</span> cumOrders = <span class="nm">0</span>, cumRevenue = <span class="nm">0</span>;
+<span class="kw">const</span> growth = sortedDays.<span class="fn">map</span>(([date, d]) => {
+  cumOrders  += d.orders;
+  cumRevenue += d.revenue;
+  <span class="kw">return</span> { date, totalOrders: cumOrders, totalRevenue: Math.<span class="fn">round</span>(cumRevenue) };
+});</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ 05 · ORDERS & PRODUCTS ═══════════════ -->
+    <div class="sec" id="s-orders">
+      <div class="sec-head">
+        <div class="sec-num">05 · Orders &amp; Products</div>
+        <div class="sec-title">Đơn hàng &amp; Sản phẩm</div>
+        <p class="sec-note">Danh sách đơn hàng, phân loại hoàn/huỷ, tồn kho và video GMV — dữ liệu vận hành hàng ngày.</p>
+      </div>
+
+      <!-- ORDER LIST -->
+      <div class="ep" id="s-orders-ep">
+        <div class="ep-head" onclick="tog(this)">
+          <span class="m m-get">GET</span>
+          <div class="ep-meta">
+            <div class="ep-path"><span class="dim">/orders/</span>list</div>
+            <div class="ep-desc">Danh sách đơn hàng — server-side pagination, filter &amp; sort</div>
+            <div class="ep-biz">Endpoint chuẩn với OFFSET/LIMIT — không có logic đặc biệt.</div>
+          </div>
+          <div class="ep-arrow">&#9660;</div>
+        </div>
+        <div class="ep-body">
+          <div class="tabs">
+            <button class="tb on" onclick="stab(this,'query')">Query</button>
+          </div>
+          <div class="pane on pad" data-t="query">
+            <div class="cw">
+              <div class="ct"><span class="cl">TypeORM</span><span class="cn">Standard pagination với skip/take</span></div>
+              <pre><code>ordersRepository
+  .<span class="fn">createQueryBuilder</span>(<span class="st">'o'</span>)
+  .<span class="fn">where</span>(<span class="st">'o.createdBy = :userId'</span>, { userId })
+  .<span class="fn">andWhere</span>(<span class="st">'o.createTime BETWEEN :startTime AND :endTime'</span>, { startTime, endTime })
+  .<span class="fn">orderBy</span>(<span class="st">'o.createTime'</span>, <span class="st">'DESC'</span>)
+  .<span class="fn">skip</span>(skip)
+  .<span class="fn">take</span>(take);</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RETURN REFUND -->
+      <div class="ep" id="s-refund">
+        <div class="ep-head" onclick="tog(this)">
+          <span class="m m-get">GET</span>
+          <div class="ep-meta">
+            <div class="ep-path"><span class="dim">/orders/</span>list-return-refund</div>
+            <div class="ep-desc">Đơn hoàn / huỷ — phân loại bằng cancelTime vs cancelReason</div>
+            <div class="ep-biz">Mô tả: "Đơn nào bị huỷ? Đơn nào bị hoàn trả? Hai trường hợp này được phân biệt như thế nào?"</div>
+          </div>
+          <div class="ep-arrow">&#9660;</div>
+        </div>
+        <div class="ep-body">
+          <div class="tabs">
+            <button class="tb on" onclick="stab(this,'biz')">Nghiệp vụ</button>
+            <button class="tb" onclick="stab(this,'logic')">Logic phân loại</button>
+            <button class="tb" onclick="stab(this,'query')">Query</button>
+          </div>
+          <div class="pane on pad" data-t="biz">
+            <div class="biz-box">
+              <div class="biz-box-title">Mục đích nghiệp vụ &amp; phân biệt CANCELLED vs RETURNED</div>
+              <p>Đơn <strong>CANCELLED</strong> là đơn bị huỷ trước khi giao — thường do hết hàng, buyer đổi ý, hoặc lỗi thanh toán. Đơn <strong>RETURNED</strong> là đơn đã giao xong nhưng buyer yêu cầu trả lại — thường do sản phẩm không như mô tả hoặc lỗi chất lượng.</p>
+              <p>Hai loại này có nguyên nhân và tác động khác nhau với seller: cancelled ảnh hưởng đến tỉ lệ hoàn thành đơn (completion rate) còn returned ảnh hưởng đến uy tín sản phẩm.</p>
+            </div>
+          </div>
+          <div class="pane pad" data-t="logic">
+            <div class="fml">
+              <div class="fml-lbl">Quy tắc phân loại</div>
+CANCELLED &rarr; cancelTime IS NOT NULL<br>
+RETURNED  &rarr; cancelTime IS NULL AND cancelReason IS NOT NULL<br>
+ALL       &rarr; (cancelTime IS NOT NULL)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;OR (cancelTime IS NULL AND cancelReason IS NOT NULL)
+            </div>
+            <div class="co co-info">
+              <span class="co-icon">ℹ</span>
+              <div><b>Derived table tránh row multiplication:</b><p>Nếu một order có nhiều line items, JOIN trực tiếp sẽ tạo ra nhiều rows per order, làm sai aggregate (MAX, COUNT). Giải pháp: aggregate <code>sku_image</code> và <code>sku_count</code> trong derived table (subquery trong FROM) trước khi JOIN với orders.</p></div>
+            </div>
+          </div>
+          <div class="pane pad" data-t="query">
+            <div class="cw">
+              <div class="ct"><span class="cl">TypeORM</span><span class="cn">Derived table — aggregate line items trước khi JOIN</span></div>
+              <pre><code>.<span class="fn">leftJoin</span>(
+  sub => sub
+    .<span class="fn">from</span>(<span class="st">'order_line_items'</span>, <span class="st">'oli'</span>)
+    .<span class="fn">select</span>([
+      <span class="st">'oli.order_id'</span>,
+      <span class="st">'MAX(oli.sku_image) as sku_image'</span>,       <span class="cm">// 1 ảnh đại diện</span>
+      <span class="st">'MAX(oli.product_name) as product_name'</span>,
+    ])
+    .<span class="fn">groupBy</span>(<span class="st">'oli.order_id'</span>),  <span class="cm">// aggregate trước → 1 row per order</span>
+  <span class="st">'oli_agg'</span>,
+  <span class="st">'oli_agg.order_id = o.order_id'</span>
+)
+.<span class="fn">leftJoin</span>(
+  sub => sub
+    .<span class="fn">from</span>(<span class="st">'order_skus'</span>, <span class="st">'os'</span>)
+    .<span class="fn">select</span>([<span class="st">'os.order_id'</span>, <span class="st">'COUNT(*)::int as sku_count'</span>])
+    .<span class="fn">groupBy</span>(<span class="st">'os.order_id'</span>),
+  <span class="st">'os_agg'</span>,
+  <span class="st">'os_agg.order_id = o.order_id'</span>
+)</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- INVENTORY -->
+      <div class="ep" id="s-inventory">
+        <div class="ep-head" onclick="tog(this)">
+          <span class="m m-post">POST</span>
+          <div class="ep-meta">
+            <div class="ep-path"><span class="dim">/orders/</span>inventory-search</div>
+            <div class="ep-desc">Tồn kho từ TikTok API — enrich ảnh sản phẩm từ DB nội bộ</div>
+            <div class="ep-biz">Mô tả: "Sản phẩm còn bao nhiêu hàng? (TikTok API không trả về ảnh — cần enrich từ DB)"</div>
+            <div class="tag-row"><span class="t t-ext">External API</span><span class="t t-dep">TODO: Migrate to DB sync</span></div>
+          </div>
+          <div class="ep-arrow">&#9660;</div>
+        </div>
+        <div class="ep-body">
+          <div class="tabs">
+            <button class="tb on" onclick="stab(this,'biz')">Nghiệp vụ</button>
+            <button class="tb" onclick="stab(this,'logic')">Logic enrich ảnh</button>
+          </div>
+          <div class="pane on pad" data-t="biz">
+            <div class="biz-box">
+              <div class="biz-box-title">Mục đích &amp; rủi ro</div>
+              <p>TikTok Shop API <code>/product/202309/inventory/search</code> trả về số lượng tồn kho nhưng <strong>không trả về ảnh sản phẩm</strong>. Để hiển thị UI đầy đủ, code query thêm <code>order_line_items</code> lấy <code>skuImage</code> và inject vào response. Đây là giải pháp tạm — về lâu dài cần sync inventory + image vào DB nội bộ.</p>
+            </div>
+            <div class="co co-alert">
+              <span class="co-icon">!</span>
+              <div><b>Rủi ro phụ thuộc External API:</b><p>Nếu TikTok API downtime hoặc thay đổi schema, tính năng tồn kho ngừng hoàn toàn. Không có fallback từ DB nội bộ. <strong>TODO</strong>: Thiết lập cron job sync inventory định kỳ vào DB để có fallback.</p></div>
+            </div>
+          </div>
+          <div class="pane pad" data-t="logic">
+            <div class="cw">
+              <div class="ct"><span class="cl">TypeScript</span><span class="cn">Deduplicate + inject ảnh vào TikTok response</span></div>
+              <pre><code><span class="cm">// Lấy ảnh từ DB, deduplicate: 1 productId → 1 ảnh duy nhất</span>
+<span class="kw">const</span> productInfoRaw = <span class="kw">await</span> <span class="kw">this</span>.orderLineItemsRepository.<span class="fn">find</span>({
+  where: { productId: In(productIds), skuImage: Not(<span class="fn">IsNull</span>()) },
+  select: [<span class="st">'productId'</span>, <span class="st">'skuImage'</span>],
+});
+
+<span class="cm">// Double Map: loại duplicate productId, lấy ảnh đầu tiên tìm thấy</span>
+<span class="kw">const</span> productImageById = <span class="kw">new</span> Map(
+  Array.<span class="fn">from</span>(<span class="kw">new</span> Map(productInfoRaw.<span class="fn">map</span>(p => [p.productId, p])).<span class="fn">values</span>())
+       .<span class="fn">map</span>(p => [p.productId, p.skuImage || <span class="kw">null</span>])
+);
+
+<span class="cm">// Inject productImage vào từng item trong TikTok response</span>
+data.inventory = data.inventory.<span class="fn">map</span>((inv: <span class="tp">any</span>) => ({
+  ...inv,
+  productImage: productImageById.<span class="fn">get</span>(inv.product_id) ?? <span class="kw">null</span>,
+}));</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIDEO GMV -->
+      <div class="ep" id="s-videogmv">
+        <div class="ep-head" onclick="tog(this)">
+          <span class="m m-get">GET</span>
+          <div class="ep-meta">
+            <div class="ep-path"><span class="dim">/orders/</span>list-video-has-gmv</div>
+            <div class="ep-desc">Video có / không có GMV — factory pattern + 3 queries song song</div>
+            <div class="ep-biz">Mô tả: "Video nào đang tạo ra doanh thu? Bao nhiêu % tổng video là có GMV?"</div>
+            <div class="tag-row"><span class="t t-par">Parallel</span></div>
+          </div>
+          <div class="ep-arrow">&#9660;</div>
+        </div>
+        <div class="ep-body">
+          <div class="tabs">
+            <button class="tb on" onclick="stab(this,'biz')">Nghiệp vụ</button>
+            <button class="tb" onclick="stab(this,'logic')">Logic — Factory Pattern</button>
+          </div>
+          <div class="pane on pad" data-t="biz">
+            <div class="biz-box">
+              <div class="biz-box-title">Mục đích nghiệp vụ</div>
+              <p>Seller muốn biết trong tổng số video creator đăng, bao nhiêu % thực sự tạo ra đơn hàng. Video có <code>totalPaidAmount > 0</code> là video đang "hoạt động" — đang kéo traffic và convert. Video có <code>totalPaidAmount = 0</code> là video "chết" — cần xem lại nội dung hoặc SEO. <strong>Percentage động</strong> so với tổng tất cả video (không filter type) để số % có ý nghĩa so sánh thực sự.</p>
+            </div>
+          </div>
+          <div class="pane pad" data-t="logic">
+            <div class="co co-tip">
+              <span class="co-icon">★</span>
+              <div><b>Factory Pattern <code>buildBaseQb</code>:</b><p>Hàm nhận tham số boolean <code>applyTypeFilter</code> — khi <code>true</code> thêm filter <code>hasGmv</code>/<code>noGmv</code>, khi <code>false</code> bỏ filter để đếm tổng tất cả. Gọi 3 lần trong <code>Promise.all</code>: (1) đếm tổng filtered, (2) lấy danh sách filtered có phân trang, (3) đếm tổng tất cả loại. <code>percentage = totalFiltered / totalAllType * 100</code>.</p></div>
+            </div>
+            <div class="cw">
+              <div class="ct"><span class="cl">TypeScript</span><span class="cn">buildBaseQb factory + Promise.all 3 queries</span></div>
+              <pre><code><span class="kw">const</span> buildBaseQb = (applyTypeFilter = <span class="kw">true</span>) => {
+  <span class="kw">const</span> qb = creatorContentRepository.<span class="fn">createQueryBuilder</span>(<span class="st">'cc'</span>)
+    .<span class="fn">where</span>(<span class="st">'cc.creatorUsername IS NOT NULL'</span>)
+    .<span class="fn">andWhere</span>(<span class="st">'cc.contentId IS NOT NULL'</span>)
+    .<span class="fn">andWhere</span>(<span class="st">'cc.publishedAt BETWEEN :startTime AND :endTime'</span>)
+    .<span class="fn">andWhere</span>(<span class="st">'cc.createdBy = :userId'</span>);
+
+  <span class="kw">if</span> (applyTypeFilter) {
+    <span class="kw">if</span> (type === <span class="st">'hasGmv'</span>) qb.<span class="fn">andWhere</span>(<span class="st">'cc.totalPaidAmount > 0'</span>);
+    <span class="kw">if</span> (type === <span class="st">'noGmv'</span>)  qb.<span class="fn">andWhere</span>(<span class="st">'cc.totalPaidAmount = 0'</span>);
+  }
+  <span class="kw">return</span> qb;
+};
+
+<span class="kw">const</span> [totalFiltered, listVideo, totalAllType] = <span class="kw">await</span> Promise.<span class="fn">all</span>([
+  buildBaseQb(<span class="kw">true</span>).<span class="fn">select</span>(<span class="st">'COUNT(DISTINCT cc.id)'</span>, <span class="st">'cnt'</span>).<span class="fn">getRawOne</span>(),
+  buildBaseQb(<span class="kw">true</span>).<span class="fn">select</span>([...]).<span class="fn">limit</span>(take).<span class="fn">offset</span>(offset).<span class="fn">getRawMany</span>(),
+  buildBaseQb(<span class="kw">false</span>).<span class="fn">select</span>(<span class="st">'COUNT(DISTINCT cc.id)'</span>, <span class="st">'cnt'</span>).<span class="fn">getRawOne</span>(),
+]);
+
+percentage = totalAllType > <span class="nm">0</span> ? (totalFiltered / totalAllType) * <span class="nm">100</span> : <span class="nm">0</span>;</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ 06 · SAMPLE ═══════════════ -->
+    <div class="sec" id="s-samplecost">
+      <div class="sec-head">
+        <div class="sec-num">06 · Sample Orders</div>
+        <div class="sec-title">Chi phí &amp; Thống kê Sample</div>
+        <p class="sec-note">Theo dõi chi phí gửi hàng mẫu — là cơ sở để tính doanh thu thực tế và đánh giá ROI chiến dịch KOC.</p>
+      </div>
+
+      <div class="ep open" id="s-samplecost-ep">
+        <div class="ep-head" onclick="tog(this)">
+          <span class="m m-get">GET</span>
+          <div class="ep-meta">
+            <div class="ep-path"><span class="dim">/orders/</span>sample-costs</div>
+            <div class="ep-desc">Chi phí sample — ưu tiên giá theo 3 cấp: gift &rarr; original &rarr; sale</div>
+            <div class="ep-biz">Mô tả: "Tổng chi phí hàng mẫu đã giao là bao nhiêu? Sản phẩm nào tốn kém nhất?"</div>
+          </div>
+          <div class="ep-arrow">&#9660;</div>
+        </div>
+        <div class="ep-body">
+          <div class="tabs">
+            <button class="tb on" onclick="stab(this,'biz')">Nghiệp vụ</button>
+            <button class="tb" onclick="stab(this,'logic')">Logic ưu tiên giá</button>
+            <button class="tb" onclick="stab(this,'query')">Query</button>
+          </div>
+          <div class="pane on pad" data-t="biz">
+            <div class="biz-box">
+              <div class="biz-box-title">Mục đích nghiệp vụ</div>
+              <p>Khi gửi sample, sản phẩm có thể có nhiều loại giá khác nhau — giá quà tặng (<code>giftRetailPrice</code>), giá gốc trước khuyến mãi (<code>originalPrice</code>), và giá đang bán (<code>salePrice</code>). Chi phí thực tế của sample phải dùng loại giá phù hợp nhất để phản ánh đúng mức chi của seller.</p>
+              <p><strong>Chỉ tính đơn đã có <code>deliveryTime IS NOT NULL</code></strong> — tức là đã giao thực sự. Đơn đang pending hoặc in-transit chưa thể xem là "đã chi".</p>
+            </div>
+          </div>
+          <div class="pane pad" data-t="logic">
+            <div class="fml">
+              <div class="fml-lbl">Ưu tiên 3 cấp giá</div>
+if giftRetailPrice > 0   &rarr; dùng giftRetailPrice<br>
+else if originalPrice > 0 &rarr; dùng originalPrice<br>
+else                       &rarr; dùng salePrice (có thể = 0)<br><br>
+<span class="cm">// Lý do: giftRetailPrice phản ánh "giá trị thị trường" của quà tặng</span><br>
+<span class="cm">// originalPrice phản ánh giá trước khi seller apply promotion</span><br>
+<span class="cm">// salePrice là fallback cuối — luôn có nhưng có thể = 0</span>
+            </div>
+            <p class="p">3 queries chạy song song trong <code>Promise.all</code>: (1) summary tổng cost + tổng samples, (2) list phân trang theo sản phẩm, (3) count tổng để tính total pages. Tất cả dùng cùng <code>priceExpression</code> CASE WHEN.</p>
+          </div>
+          <div class="pane pad" data-t="query">
+            <div class="cw">
+              <div class="ct"><span class="cl">TypeORM</span><span class="cn">CASE WHEN expression tái sử dụng trong 3 queries</span></div>
+              <pre><code><span class="kw">const</span> priceExpression = <span class="st">`
+  CASE
+    WHEN CAST(li.gift_retail_price AS DECIMAL) > 0
+      THEN CAST(li.gift_retail_price AS DECIMAL)
+    WHEN CAST(li.original_price AS DECIMAL) > 0
+      THEN CAST(li.original_price AS DECIMAL)
+    ELSE COALESCE(CAST(li.sale_price AS DECIMAL), 0)
+  END`</span>;
+
+<span class="cm">// Summary: tổng chi phí + tổng sample đã giao</span>
+<span class="kw">const</span> summaryQb = baseQb().<span class="fn">select</span>([
+  <span class="st">`SUM(${priceExpression}) AS "totalCost"`</span>,
+  <span class="st">`COUNT(DISTINCT o.id) AS "totalSamples"`</span>,
+]);
+
+<span class="cm">// List: group by productId, tính cost và avg per sample</span>
+<span class="kw">const</span> listQb = baseQb()
+  .<span class="fn">select</span>([
+    <span class="st">'li.productId AS "productId"'</span>,
+    <span class="st">`SUM(${priceExpression}) AS "totalCost"`</span>,
+    <span class="st">`AVG(${priceExpression}) AS "costPerSample"`</span>,
+    <span class="st">'COUNT(li.id) AS "quantity"'</span>,
+  ])
+  .<span class="fn">groupBy</span>(<span class="st">'li.productId'</span>)
+  .<span class="fn">orderBy</span>(sortExpression, order)
+  .<span class="fn">skip</span>(skip).<span class="fn">take</span>(take);</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ep" id="s-samplesend">
+        <div class="ep-head" onclick="tog(this)">
+          <span class="m m-get">GET</span>
+          <div class="ep-meta">
+            <div class="ep-path"><span class="dim">/orders/</span>total-sample-send</div>
+            <div class="ep-desc">Tổng sample gửi theo từng ngày — [{date, total}]</div>
+            <div class="ep-biz">Mô tả: "Số lượng sample gửi đi mỗi ngày trong kỳ? Dùng để vẽ biểu đồ trend."</div>
+          </div>
+          <div class="ep-arrow">&#9660;</div>
+        </div>
+        <div class="ep-body">
+          <div class="tabs"><button class="tb on" onclick="stab(this,'query')">Query</button></div>
+          <div class="pane on pad" data-t="query">
+            <div class="cw">
+              <div class="ct"><span class="cl">TypeORM</span><span class="cn">GROUP BY DATE(createTime) — aggregation theo ngày</span></div>
+              <pre><code>ordersRepository
+  .<span class="fn">createQueryBuilder</span>(<span class="st">'o'</span>)
+  .<span class="fn">select</span>(<span class="st">`DATE(o.createTime)`</span>, <span class="st">'date'</span>)
+  .<span class="fn">addSelect</span>(<span class="st">`COUNT(o.id)`</span>, <span class="st">'total'</span>)
+  .<span class="fn">where</span>(<span class="st">'o.isSampleOrder = true'</span>)
+  .<span class="fn">andWhere</span>(<span class="st">'o.createdBy = :userId'</span>, { userId })
+  .<span class="fn">andWhere</span>(<span class="st">'o.createTime BETWEEN :startTime AND :endTime'</span>, { startTime, endTime })
+  .<span class="fn">groupBy</span>(<span class="st">`DATE(o.createTime)`</span>)
+  .<span class="fn">orderBy</span>(<span class="st">`DATE(o.createTime)`</span>, <span class="st">'ASC'</span>)
+  .<span class="fn">getRawMany</span>();</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ 07 · UTILITIES ═══════════════ -->
+    <div class="sec" id="s-commission">
+      <div class="sec-head">
+        <div class="sec-num">07 · Utilities</div>
+        <div class="sec-title">Tiện ích &amp; Tra cứu</div>
+        <p class="sec-note">Các endpoint hỗ trợ — hoa hồng tối đa theo partner, danh sách sản phẩm phân trang.</p>
+      </div>
+
+      <div class="ep" id="s-products">
+        <div class="ep-head" onclick="tog(this)">
+          <span class="m m-get">GET</span>
+          <div class="ep-meta">
+            <div class="ep-path"><span class="dim">/orders/</span>list-product-detail</div>
+            <div class="ep-desc">Distinct sản phẩm từ order line items — PostgreSQL DISTINCT ON</div>
+            <div class="ep-biz">Mô tả: "Danh sách sản phẩm đã từng xuất hiện trong đơn hàng (có ảnh), không trùng lặp."</div>
+          </div>
+          <div class="ep-arrow">&#9660;</div>
+        </div>
+        <div class="ep-body">
+          <div class="tabs"><button class="tb on" onclick="stab(this,'query')">Query</button></div>
+          <div class="pane on pad" data-t="query">
+            <p class="p"><code>distinctOn(['li.productId'])</code> của TypeORM tương đương <code>DISTINCT ON (product_id)</code> trong PostgreSQL — lấy một row đại diện cho mỗi <code>productId</code> kèm đầy đủ thông tin, thay vì dùng subquery phức tạp. Điều kiện <code>skuImage IS NOT NULL</code> đảm bảo chỉ trả sản phẩm có ảnh để hiển thị UI.</p>
+            <div class="cw">
+              <div class="ct"><span class="cl">TypeORM</span><span class="cn">distinctOn — PostgreSQL DISTINCT ON với offset/limit</span></div>
+              <pre><code>orderLineItemsRepository
+  .<span class="fn">createQueryBuilder</span>(<span class="st">'li'</span>)
+  .<span class="fn">distinctOn</span>([<span class="st">'li.productId'</span>])        <span class="cm">// → DISTINCT ON (product_id) PG</span>
+  .<span class="fn">select</span>([
+    <span class="st">'li.productId AS "productId"'</span>,
+    <span class="st">'li.productName AS "productName"'</span>,
+    <span class="st">'li.skuImage AS "productImg"'</span>,
+  ])
+  .<span class="fn">where</span>(<span class="st">'li.createdBy = :userId'</span>, { userId })
+  .<span class="fn">andWhere</span>(<span class="st">'li.deletedAt IS NULL'</span>)
+  .<span class="fn">andWhere</span>(<span class="st">'li.productId IS NOT NULL'</span>)
+  .<span class="fn">andWhere</span>(<span class="st">'li.skuImage IS NOT NULL'</span>)    <span class="cm">// chỉ sản phẩm có ảnh</span>
+  .<span class="fn">offset</span>(skip).<span class="fn">limit</span>(take)
+  .<span class="fn">getRawMany</span>();</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+// Toggle endpoint card
+function tog(h) { h.closest('.ep').classList.toggle('open'); }
+
+// Switch tab
+function stab(btn, id) {
+  var body = btn.closest('.ep-body');
+  body.querySelectorAll('.tb').forEach(function(b) { b.classList.remove('on'); });
+  body.querySelectorAll('.pane').forEach(function(p) { p.classList.remove('on'); });
+  btn.classList.add('on');
+  var pane = body.querySelector('[data-t="' + id + '"]');
+  if (pane) pane.classList.add('on');
+}
+
+// Sidebar search
+document.getElementById('q').addEventListener('input', function() {
+  var q = this.value.toLowerCase().trim();
+  document.querySelectorAll('.sb-tree .sb-a').forEach(function(a) {
+    var show = !q || a.textContent.toLowerCase().includes(q);
+    a.style.display = show ? 'flex' : 'none';
+  });
+  document.querySelectorAll('.sb-cat').forEach(function(cat) {
+    var next = cat.nextElementSibling;
+    var any = false;
+    while (next && !next.classList.contains('sb-cat')) {
+      if (next.style.display !== 'none') any = true;
+      next = next.nextElementSibling;
+    }
+    cat.style.display = any ? 'block' : 'none';
+  });
+});
+
+// Navigation
+var main = document.getElementById('main');
+var links = document.querySelectorAll('.sb-a[href]');
+
+links.forEach(function(l) {
+  l.addEventListener('click', function(e) {
+    e.preventDefault();
+    var href = l.getAttribute('href');
+    if (!href || !href.startsWith('#')) return;
+    var el = document.getElementById(href.slice(1));
+    if (!el) return;
+    
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    activate(l);
+  });
+});
+
+function activate(el) {
+  links.forEach(function(l) { l.classList.remove('on'); });
+  el.classList.add('on');
+  el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+
+// Scrollspy + progress bar
+var secs = Array.from(document.querySelectorAll('.sec[id], .ep[id]'));
+main.addEventListener('scroll', function() {
+  document.getElementById('prog').style.width =
+    (main.scrollTop / (main.scrollHeight - main.clientHeight) * 100) + '%';
+  
+  var cur = null;
+  var mainRect = main.getBoundingClientRect();
+  secs.forEach(function(s) {
+    var rect = s.getBoundingClientRect();
+    if (rect.top - mainRect.top <= 150) {
+      cur = s.id;
+    }
+  });
+
+  if (cur) {
+    var a = document.querySelector('.sb-a[href="#' + cur + '"]');
+    if (a) activate(a);
+  }
+}, { passive: true });
+
+// Reveal on scroll
+var obs = new IntersectionObserver(function(entries) {
+  entries.forEach(function(e) { if (e.isIntersecting) e.target.classList.add('vis'); });
+}, { threshold: 0.05 });
+document.querySelectorAll('.sec').forEach(function(s) { obs.observe(s); });
+</script>
+</body>
+</html>
